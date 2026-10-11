@@ -1,9 +1,9 @@
 import React, { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  MapPin, Compass, Waves, Trees, Mountain, Landmark, 
-  Coffee, ArrowRight, BedDouble, ShieldCheck, Sparkles, 
-  Search, SlidersHorizontal, PhoneCall, CheckCircle2, 
+import {
+  MapPin, Compass, Waves, Trees, Mountain, Landmark,
+  Coffee, ArrowRight, BedDouble, ShieldCheck, Sparkles,
+  Search, SlidersHorizontal, PhoneCall, CheckCircle2,
   ChevronRight, ArrowUpRight, Building2, Star, Eye
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -433,11 +433,10 @@ const TourismMapPage: React.FC = () => {
                     <button
                       key={div.id}
                       onClick={() => setSelectedDivision(div.id)}
-                      className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
-                        isSelected
-                          ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/20 font-bold"
-                          : "bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200"
-                      }`}
+                      className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${isSelected
+                        ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/20 font-bold"
+                        : "bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200"
+                        }`}
                     >
                       <span>{isBn ? div.labelBn : div.labelEn}</span>
                     </button>
@@ -456,11 +455,10 @@ const TourismMapPage: React.FC = () => {
                     <button
                       key={cat.id}
                       onClick={() => setSelectedCategory(cat.id)}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all ${
-                        isSelected
-                          ? "bg-slate-900 text-white font-bold shadow-xs"
-                          : "bg-white text-slate-600 hover:bg-slate-50 border border-slate-200"
-                      }`}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all ${isSelected
+                        ? "bg-slate-900 text-white font-bold shadow-xs"
+                        : "bg-white text-slate-600 hover:bg-slate-50 border border-slate-200"
+                        }`}
                     >
                       <Icon className={`w-3.5 h-3.5 ${isSelected ? "text-emerald-400" : "text-slate-400"}`} />
                       <span>{isBn ? cat.labelBn : cat.label}</span>
@@ -494,7 +492,7 @@ const TourismMapPage: React.FC = () => {
                 {isBn ? "উপলব্ধ পর্যটন স্পটসমূহ" : "Verified Tourist Spots"}
               </h2>
               <p className="text-xs md:text-sm text-slate-500 mt-0.5">
-                {isBn 
+                {isBn
                   ? `মোট ${filteredSpots.length}টি পর্যটন গন্তব্য পাওয়া গেছে`
                   : `Showing ${filteredSpots.length} tourism destinations`}
               </p>
@@ -513,7 +511,7 @@ const TourismMapPage: React.FC = () => {
                 {isBn ? "কোনো পর্যটন স্পট খুঁজে পাওয়া যায়নি" : "No tourist destinations found"}
               </h3>
               <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
-                {isBn 
+                {isBn
                   ? "অনুসন্ধানের শব্দ পরিবর্তন করুন বা অন্য কোনো বিভাগ/ক্যাটাগরি ফিল্টার নির্বাচন করুন।"
                   : "Try clearing your search query or adjusting your filters."}
               </p>
@@ -626,8 +624,8 @@ const TourismMapPage: React.FC = () => {
                     {isBn ? "২৪/৭ পর্যটক সুরক্ষা ও হেল্পলাইন" : "24/7 National Tourist Helpline & Safety"}
                   </h4>
                   <p className="text-xs md:text-sm text-slate-600 mt-0.5">
-                    {isBn 
-                      ? "ট্যুরিস্ট পুলিশ বাংলাদেশ হটলাইন: ০১৩২০-১৬০১৬০ • জাতীয় জরুরি সেবা: ৯৯৯" 
+                    {isBn
+                      ? "ট্যুরিস্ট পুলিশ বাংলাদেশ হটলাইন: ০১৩২০-১৬০১৬০ • জাতীয় জরুরি সেবা: ৯৯৯"
                       : "Tourist Police Hotline: 01320-160160 • National Emergency: 999"}
                   </p>
                 </div>
