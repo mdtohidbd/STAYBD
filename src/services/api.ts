@@ -101,8 +101,15 @@ export interface HotelOwner extends UserProfile {
   verificationStatus: VerificationStatus;
   subscriptionEndDate: string;
   hasAdminOverride: boolean;
+  phone?: string;
+  nidNumber?: string;
   nidDocUrl?: string;
+  tradeLicenseNumber?: string;
   hotelAuthDocUrl?: string;
+  hotelName?: string;
+  hotelAddress?: string;
+  hotelCity?: string;
+  commissionRate?: number;
 }
 
 export interface Hotel {
@@ -185,12 +192,16 @@ export interface Booking {
   nights: number;
   totalPrice: number;
   paymentMethod?: "card" | "bkash" | "nagad" | "cash";
+  paymentPhone?: string;
+  transactionId?: string;
   guestName?: string;
   guestEmail?: string;
   guestPhone?: string;
   specialRequests?: string;
   arrivalTime?: string;
   travelingForWork?: boolean;
+  country?: string;
+  bookingFor?: string;
   createdAt: string;
 }
 
@@ -469,12 +480,20 @@ export const api = {
     checkOut: string;
     nights: number;
     paymentMethod: "card" | "bkash" | "nagad" | "cash" | string;
+    hotelName?: string;
+    roomType?: string;
+    roomNumber?: string;
+    totalPrice?: number;
+    paymentPhone?: string;
+    transactionId?: string;
     guestName?: string;
     guestEmail?: string;
     guestPhone?: string;
     specialRequests?: string;
     arrivalTime?: string;
     travelingForWork?: boolean;
+    country?: string;
+    bookingFor?: string;
   }): Promise<{ message: string; booking: Booking }> => {
     return apiFetch<{ message: string; booking: Booking }>('/bookings/process-payment', {
       method: 'POST',
@@ -588,25 +607,42 @@ export const api = {
 
   getOwnerWallet: async (id: string): Promise<{ totalBalance: number; transactions: WalletTransaction[] }> => {
     try {
-      // If it's a hotel ID, we get bookings for that hotel. 
-      // If it's an owner ID, the behavior might be undefined if the backend doesn't support it,
-      // but we maintain current behavior of using the bookings endpoint.
-      const res = await apiFetch<any>(`/bookings/hotel/${id}`);
-      const bookings: Booking[] = Array.isArray(res) ? res : res.bookings ?? [];
+      const res = await apiFetch<any>(`/admin/wallet/${id}`);
+      if (res && typeof res.totalBalance === 'number') {
+        return res;
+      }
+      // Fallback to bookings calculation if needed
+      const bRes = await apiFetch<any>(`/bookings/hotel/${id}`);
+      const bookings: Booking[] = Array.isArray(bRes) ? bRes : bRes.bookings ?? [];
       const confirmed = bookings.filter(b => b.status === 'CONFIRMED');
       const balance = confirmed.reduce((s, b) => s + b.totalPrice, 0);
       return { totalBalance: balance, transactions: [] };
-    } catch { return { totalBalance: 0, transactions: [] }; }
+    } catch {
+      return { totalBalance: 0, transactions: [] };
+    }
   },
 
   getHotelWallet: async (hotelId: string): Promise<{ totalBalance: number; transactions: WalletTransaction[] }> => {
     try {
-      const res = await apiFetch<any>(`/bookings/hotel/${hotelId}`);
-      const bookings: Booking[] = Array.isArray(res) ? res : res.bookings ?? [];
+      const res = await apiFetch<any>(`/admin/wallet/${hotelId}`);
+      if (res && typeof res.totalBalance === 'number') {
+        return res;
+      }
+      const bRes = await apiFetch<any>(`/bookings/hotel/${hotelId}`);
+      const bookings: Booking[] = Array.isArray(bRes) ? bRes : bRes.bookings ?? [];
       const confirmed = bookings.filter(b => b.status === 'CONFIRMED');
       const balance = confirmed.reduce((s, b) => s + b.totalPrice, 0);
       return { totalBalance: balance, transactions: [] };
-    } catch { return { totalBalance: 0, transactions: [] }; }
+    } catch {
+      return { totalBalance: 0, transactions: [] };
+    }
+  },
+
+  requestPayout: async (payload: { hotelId: string; amount: number; method: string; account: string }): Promise<any> => {
+    return apiFetch('/admin/wallet/payout', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
   },
 
   addRoom: async (room: Omit<Room, "id" | "createdAt" | "updatedAt">): Promise<Room> => {
@@ -715,6 +751,39 @@ export const api = {
     const body = { ...payload, role: 'OWNER', status: 'ACTIVE', verificationStatus: 'PENDING', subscriptionEndDate: new Date(Date.now() + 30 * 86400000).toISOString(), hasAdminOverride: false };
     const data = await apiFetch<any>('/users', { method: 'POST', body: JSON.stringify(body) });
     return { ...data, id: data._id || data.id };
+  },
+
+  onboardOwner: async (payload: {
+    name: string;
+    email: string;
+    phone?: string;
+    password?: string;
+    nidNumber?: string;
+    nidDocUrl?: string;
+    tradeLicenseNumber?: string;
+    hotelAuthDocUrl?: string;
+    hotelName?: string;
+    city?: string;
+    address?: string;
+    hotelCategory?: string;
+    hotelDescription?: string;
+    hotelImage?: string;
+    amenities?: string[];
+    initialRoom?: {
+      type: string;
+      category?: string;
+      pricePerNight: number;
+      totalInventory: number;
+      floorNumber?: number;
+      roomNumber?: string;
+    };
+    commissionRate?: number;
+    verificationStatus?: "VERIFIED" | "PENDING";
+  }): Promise<{ success: boolean; owner: HotelOwner; hotel: Hotel; room: Room; message: string }> => {
+    return apiFetch<{ success: boolean; owner: HotelOwner; hotel: Hotel; room: Room; message: string }>('/admin/onboard-owner', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
   },
 
   addUser: async (payload: { name: string; email: string; avatar?: string }): Promise<UserProfile> => {

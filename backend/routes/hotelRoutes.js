@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const mongoose = require('mongoose');
 const Hotel = require('../models/Hotel');
 const Room = require('../models/Room');
 const { convertMapUrlToPointCustom } = require('../utils/mapHelpers');
@@ -85,6 +86,50 @@ router.get('/all', async (req, res) => {
     const hotels = await Hotel.find().sort({ updatedAt: -1 }).lean();
     res.json(hotels.map(h => ({ ...h, id: h._id.toString(), ownerId: h.owner?.toString() || '' })));
   } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+// GET /api/hotels/owner/:ownerId — hotels belonging to a specific owner
+router.get('/owner/:ownerId', async (req, res) => {
+  try {
+    const { ownerId } = req.params;
+    let hotels = [];
+
+    if (mongoose.Types.ObjectId.isValid(ownerId)) {
+      hotels = await Hotel.find({ owner: ownerId }).sort({ updatedAt: -1 }).lean();
+    }
+
+    // Fallback: check if ownerId is Clerk ID, email, or custom partner ID in User model
+    if (hotels.length === 0) {
+      const User = require('../models/User');
+      const matchedUser = await User.findOne({
+        $or: [
+          { clerkId: ownerId },
+          { email: new RegExp('^' + ownerId + '$', 'i') }
+        ]
+      });
+      if (matchedUser) {
+        hotels = await Hotel.find({ owner: matchedUser._id }).sort({ updatedAt: -1 }).lean();
+      }
+    }
+
+    const hotelIds = hotels.map(h => h._id);
+    const rooms = await Room.find({ hotel: { $in: hotelIds } }).lean();
+
+    const result = hotels.map(hotel => {
+      const hotelRooms = rooms.filter(r => r.hotel.toString() === hotel._id.toString());
+      return {
+        ...hotel,
+        id: hotel._id.toString(),
+        ownerId: hotel.owner?.toString() || '',
+        rooms: hotelRooms.map(r => ({ ...r, id: r._id.toString(), hotelId: hotel._id.toString() }))
+      };
+    });
+
+    res.json(result);
+  } catch (err) {
+    console.error('Error fetching owner hotels:', err);
+    res.json([]);
+  }
 });
 
 // GET /api/hotels/:id

@@ -1,6 +1,6 @@
 /**
  * Admin Dashboard — Full Modular Implementation
- * Tabs: Stats · Users · Hotels · Bookings (Check-in/out) · Complaints · Notifications
+ * Tabs: Stats · Users · Hotels · Bookings (Check-in/out) · Complaints · Notifications · Experiences · Spots
  */
 import { useEffect, useState } from "react";
 import {
@@ -80,15 +80,24 @@ export default function AdminDashboard() {
   }, [refresh, currentUser]);
 
   if (authLoading) return <Loading />;
-  if (!currentUser) return null; // Or redirect, already handled in useEffect
+  if (!currentUser) return null;
 
   if (currentUser?.role !== "ADMIN") {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-8 text-center">
-        <Shield className="w-20 h-20 text-red-500 mb-6" />
-        <h1 className="text-3xl font-bold text-white mb-2">Access Denied</h1>
-        <p className="text-slate-400 max-w-md">This area is for Super Administrators only. Owners and regular users are not allowed to access this panel.</p>
-        <button onClick={() => window.location.href = "/"} className="mt-8 bg-indigo-600 text-white px-6 py-2 rounded-full font-bold">Return to Home</button>
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-8 text-center">
+        <div className="w-16 h-16 rounded-2xl bg-rose-50 text-rose-600 border border-rose-200 flex items-center justify-center mb-4">
+          <Shield className="w-8 h-8" />
+        </div>
+        <h1 className="text-2xl font-black text-slate-900 mb-2">Access Denied</h1>
+        <p className="text-slate-500 max-w-md text-sm mb-6">
+          This area is restricted to Super Administrators. Owners and regular guests do not have permission to access the national control panel.
+        </p>
+        <button
+          onClick={() => window.location.href = "/"}
+          className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-xl font-bold text-xs shadow-sm transition"
+        >
+          Return to Public Site
+        </button>
       </div>
     );
   }
@@ -98,7 +107,7 @@ export default function AdminDashboard() {
   const tabNav: { id: Tab; label: string; icon: React.ReactNode; badge?: number }[] = [
     { id: "stats", label: "Dashboard", icon: <BarChart3 className="w-5 h-5" /> },
     { id: "users", label: "Users & Owners", icon: <Users className="w-5 h-5" /> },
-    { id: "hotels", label: "Hotels", icon: <Building2 className="w-5 h-5" /> },
+    { id: "hotels", label: "Hotels & Rooms", icon: <Building2 className="w-5 h-5" /> },
     { id: "bookings", label: "Bookings", icon: <BookOpen className="w-5 h-5" /> },
     { id: "complaints", label: "Complaints", icon: <AlertTriangle className="w-5 h-5" />, badge: (Array.isArray(complaints) ? complaints : []).filter(c => c.status !== "Resolved").length },
     { id: "experiences", label: "Experiences", icon: <Star className="w-5 h-5" /> },
@@ -106,16 +115,27 @@ export default function AdminDashboard() {
     { id: "notifications", label: "Notifications", icon: <Bell className="w-5 h-5" />, badge: unreadNotif },
   ];
 
+  const currentTabObj = tabNav.find(t => t.id === tab);
+
+  const handleExportAll = () => {
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ stats, hotelsCount: hotels.length, bookingsCount: bookings.length }, null, 2));
+    const dl = document.createElement('a');
+    dl.setAttribute("href", dataStr);
+    dl.setAttribute("download", `staybd_admin_report_${new Date().toISOString().slice(0, 10)}.json`);
+    dl.click();
+  };
+
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex">
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex font-sans">
       {/* Mobile Overlay */}
       {isSidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/60 z-[40] md:hidden backdrop-blur-sm transition-opacity"
+          className="fixed inset-0 bg-slate-900/40 z-[40] md:hidden backdrop-blur-xs transition-opacity"
           onClick={() => setIsSidebarOpen(false)}
         />
       )}
 
+      {/* Admin Sidebar */}
       <AdminSidebar
         tab={tab}
         setTab={setTab}
@@ -124,60 +144,75 @@ export default function AdminDashboard() {
         tabNav={tabNav}
         setShowAddOwner={setShowAddOwner}
         reload={reload}
+        currentUser={currentUser}
       />
 
-      <main className="md:ml-56 flex-1 p-4 md:p-10 max-w-full overflow-x-hidden relative min-h-screen bg-[#070911]">
-        {/* Advanced Background Grid */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808008_1px,transparent_1px),linear-gradient(to_bottom,#80808008_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none" />
-        <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500/[0.03] via-transparent to-purple-500/[0.03] pointer-events-none" />
+      {/* Main Content Area */}
+      <main className="md:ml-64 flex-1 p-4 md:p-8 max-w-full overflow-x-hidden relative min-h-screen bg-slate-50">
+        {/* Subtle background decoration */}
+        <div className="absolute inset-0 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none opacity-60" />
 
-        <AdminTopBar setIsSidebarOpen={setIsSidebarOpen} />
-
-        <div className="h-6 md:h-12" />
-
-        {tab === "stats" && <StatsPanel stats={stats} bookings={bookings} hotels={hotels} />}
-
-        {tab === "users" && (
-          <UserManagementPanel
-            users={users}
-            hotels={hotels}
-            bookings={bookings}
-            reload={reload}
-            showAddOwner={showAddOwner}
-            setShowAddOwner={setShowAddOwner}
+        <div className="relative z-10">
+          <AdminTopBar
+            setIsSidebarOpen={setIsSidebarOpen}
+            activeTabLabel={currentTabObj?.label || "Dashboard"}
+            unreadCount={unreadNotif}
+            onNotificationClick={() => setTab("notifications")}
+            onExport={handleExportAll}
           />
-        )}
 
-        {tab === "hotels" && (
-          <HotelManagementPanel
-            hotels={hotels}
-            rooms={rooms}
-            userList={users}
-            reload={reload}
-          />
-        )}
+          {tab === "stats" && <StatsPanel stats={stats} bookings={bookings} hotels={hotels} onNavigateTab={setTab} />}
 
-        {tab === "bookings" && <BookingsPanel bookings={bookings} reload={reload} />}
+          {tab === "users" && (
+            <UserManagementPanel
+              users={users}
+              hotels={hotels}
+              bookings={bookings}
+              complaints={complaints}
+              reload={reload}
+              showAddOwner={showAddOwner}
+              setShowAddOwner={setShowAddOwner}
+            />
+          )}
 
-        {tab === "complaints" && <ComplaintsPanel complaints={complaints} reload={reload} />}
+          {tab === "hotels" && (
+            <HotelManagementPanel
+              hotels={hotels}
+              rooms={rooms}
+              userList={users}
+              reload={reload}
+            />
+          )}
 
-        {tab === "experiences" && (
-          <ExperienceManagementPanel
-            experiences={experiences}
-            userList={users}
-            reload={reload}
-          />
-        )}
+          {tab === "bookings" && (
+            <BookingsPanel
+              bookings={bookings}
+              users={users}
+              complaints={complaints}
+              reload={reload}
+            />
+          )}
 
-        {tab === "spots" && <TouristSpotsPanel />}
+          {tab === "complaints" && <ComplaintsPanel complaints={complaints} reload={reload} />}
 
-        {tab === "notifications" && (
-          <NotificationsPanel
-            notifications={notifications}
-            currentUser={currentUser}
-            reload={reload}
-          />
-        )}
+          {tab === "experiences" && (
+            <ExperienceManagementPanel
+              experiences={experiences}
+              userList={users}
+              reload={reload}
+            />
+          )}
+
+          {tab === "spots" && <TouristSpotsPanel />}
+
+          {tab === "notifications" && (
+            <NotificationsPanel
+              notifications={notifications}
+              currentUser={currentUser}
+              reload={reload}
+            />
+          )}
+        </div>
       </main>
     </div>
   );

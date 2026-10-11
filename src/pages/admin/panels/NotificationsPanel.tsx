@@ -1,5 +1,5 @@
 import React from "react";
-import { Bell, Ticket, Wallet, ShieldAlert } from "lucide-react";
+import { Bell, Ticket, Wallet, ShieldAlert, CheckCheck, Clock } from "lucide-react";
 import { api, Notification, UserProfile, HotelOwner } from "../../../services/api";
 
 interface NotificationsPanelProps {
@@ -12,44 +12,94 @@ export default function NotificationsPanel({ notifications, currentUser, reload 
     const unreadNotif = (Array.isArray(notifications) ? notifications : []).filter(n => !n.isRead).length;
 
     return (
-        <div className="space-y-6">
-            <div className="flex justify-between items-center">
-                <h3 className="text-slate-500 text-[10px] font-black uppercase tracking-widest">Global Feed</h3>
+        <div className="space-y-6 animate-in fade-in duration-500">
+            {/* Header */}
+            <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-sm flex items-center justify-between">
+                <div>
+                    <h3 className="text-sm font-extrabold text-slate-900">Platform Notifications & System Feed</h3>
+                    <p className="text-xs text-slate-500">Live operational alerts, booking confirmations, and host actions</p>
+                </div>
                 {unreadNotif > 0 && currentUser && (
-                    <button onClick={async () => { await api.markAllNotificationsRead(currentUser.id); reload(); }}
-                        className="text-[10px] font-black uppercase tracking-widest text-indigo-400 hover:text-indigo-300 transition-colors bg-indigo-500/10 px-4 py-2 rounded-xl border border-indigo-500/20">
-                        Purge Unread Pulse
+                    <button
+                        onClick={async () => {
+                            await api.markAllNotificationsRead(currentUser.id);
+                            reload();
+                        }}
+                        className="text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 transition px-3.5 py-2 rounded-xl border border-indigo-200 flex items-center gap-1.5 shadow-xs"
+                    >
+                        <CheckCheck className="w-4 h-4" />
+                        <span>Mark All as Read ({unreadNotif})</span>
                     </button>
                 )}
             </div>
 
-            <div className="grid grid-cols-1 gap-4">
-                {notifications.length === 0 && (
-                    <div className="py-40 text-center">
-                        <Bell className="w-16 h-16 text-slate-800 mx-auto mb-6 opacity-20" />
-                        <p className="text-slate-500 font-black uppercase tracking-[0.3em] text-xs">Awaiting System Transmission</p>
-                    </div>
-                )}
+            {/* Notification List */}
+            <div className="grid grid-cols-1 gap-3">
                 {notifications.map(n => (
-                    <div key={n.id}
-                        className={`group flex gap-6 items-center p-6 rounded-[32px] border transition-all cursor-pointer relative overflow-hidden ${n.isRead ? "bg-slate-900/40 border-slate-800 hover:bg-slate-800/40" : "bg-indigo-600/5 border-indigo-500/20 hover:bg-indigo-600/10 shadow-xl shadow-indigo-600/5"}`}
-                        onClick={async () => { await api.markNotificationRead(n.id); reload(); }}
+                    <div
+                        key={n.id}
+                        className={`group flex items-start gap-4 p-5 rounded-2xl border transition-all cursor-pointer relative overflow-hidden ${
+                            n.isRead
+                                ? "bg-white border-slate-200/80 hover:bg-slate-50/70"
+                                : "bg-indigo-50/40 border-indigo-200/80 shadow-xs hover:bg-indigo-50/70"
+                        }`}
+                        onClick={async () => {
+                            if (!n.isRead) {
+                                await api.markNotificationRead(n.id);
+                                reload();
+                            }
+                        }}
                     >
-                        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shadow-xl transition-transform group-hover:scale-110 ${n.isRead ? "bg-slate-800 text-slate-500" : "bg-indigo-600 text-white"}`}>
-                            {n.type === "BOOKING" ? <Ticket className="w-6 h-6" /> : n.type === "PAYMENT" ? <Wallet className="w-6 h-6" /> : n.type === "COMPLAINT" ? <ShieldAlert className="w-6 h-6" /> : <Bell className="w-6 h-6" />}
+                        <div
+                            className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 border ${
+                                n.isRead
+                                    ? "bg-slate-100 text-slate-600 border-slate-200"
+                                    : "bg-indigo-600 text-white border-indigo-600 shadow-sm"
+                            }`}
+                        >
+                            {n.type === "BOOKING" ? (
+                                <Ticket className="w-5 h-5" />
+                            ) : n.type === "PAYMENT" ? (
+                                <Wallet className="w-5 h-5" />
+                            ) : n.type === "COMPLAINT" ? (
+                                <ShieldAlert className="w-5 h-5" />
+                            ) : (
+                                <Bell className="w-5 h-5" />
+                            )}
                         </div>
-                        <div className="flex-1">
-                            <div className="flex justify-between items-start">
-                                <p className={`font-black uppercase tracking-tight ${n.isRead ? "text-slate-400" : "text-white text-lg"}`}>{n.title}</p>
-                                <p className="text-[10px] text-slate-500 font-black font-mono uppercase tracking-widest">{new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+
+                        <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-2 mb-1">
+                                <h4
+                                    className={`text-xs md:text-sm font-bold truncate ${
+                                        n.isRead ? "text-slate-800" : "text-indigo-950 font-extrabold"
+                                    }`}
+                                >
+                                    {n.title}
+                                </h4>
+                                <span className="text-[11px] text-slate-400 font-medium flex items-center gap-1 shrink-0">
+                                    <Clock className="w-3 h-3" />
+                                    {new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                </span>
                             </div>
-                            <p className="text-slate-500 text-sm font-medium mt-1 leading-relaxed">{n.message}</p>
+                            <p className="text-xs text-slate-600 font-medium leading-relaxed">
+                                {n.message}
+                            </p>
                         </div>
+
                         {!n.isRead && (
-                            <div className="absolute top-0 right-0 w-2 h-full bg-indigo-500 shadow-[0_0_20px_rgba(99,102,241,0.5)]" />
+                            <span className="w-2.5 h-2.5 rounded-full bg-indigo-600 shrink-0 self-center" />
                         )}
                     </div>
                 ))}
+
+                {notifications.length === 0 && (
+                    <div className="py-24 text-center bg-white rounded-3xl border border-slate-200/90">
+                        <Bell className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                        <h4 className="text-sm font-extrabold text-slate-900">No New Notifications</h4>
+                        <p className="text-xs text-slate-400 mt-0.5">Platform feeds and alerts will show up here.</p>
+                    </div>
+                )}
             </div>
         </div>
     );

@@ -10,12 +10,24 @@ export function StatCard({ label, value, subLabel, color, icon }: { label: strin
     };
     const c = colors[color] || colors.indigo;
 
+    const renderIcon = () => {
+        if (!icon) return null;
+        if (React.isValidElement(icon)) {
+            return cloneElement(icon as React.ReactElement<any>, { className: "w-5 h-5" });
+        }
+        if (typeof icon === 'function') {
+            const IconComp = icon as any;
+            return <IconComp className="w-5 h-5" />;
+        }
+        return null;
+    };
+
     return (
         <div className={`p-4 rounded-[24px] border ${c.ring} bg-slate-900/30 backdrop-blur-xl hover:translate-y-[-4px] transition-all duration-300 group shadow-md ${c.shadow} ${c.glow} cursor-default overflow-hidden relative`}>
             <div className="absolute top-0 right-0 w-12 h-12 bg-gradient-to-br from-white/5 to-transparent rounded-bl-full pointer-events-none" />
             <div className="flex justify-between items-center mb-3">
                 <div className={`p-2 rounded-xl ${c.bg} ${c.icon} group-hover:scale-110 transition-transform shadow-inner`}>
-                    {cloneElement(icon as React.ReactElement, { className: "w-5 h-5" })}
+                    {renderIcon()}
                 </div>
                 <div className="h-1 w-5 bg-slate-800/50 rounded-full group-hover:bg-indigo-500 transition-colors" />
             </div>

@@ -21,11 +21,17 @@ const UserSchema = new mongoose.Schema(
     status: { type: String, enum: ['ACTIVE', 'BLOCKED', 'SUSPENDED'], default: 'ACTIVE' },
 
     // ── Owner Specific Fields ─────────────────────────────────
-    verificationStatus:  { type: String, enum: ['PENDING', 'VERIFIED', 'REJECTED'] },
+    verificationStatus:  { type: String, enum: ['PENDING', 'VERIFIED', 'REJECTED'], default: 'PENDING' },
     subscriptionEndDate: { type: Date },
     hasAdminOverride:    { type: Boolean, default: false },
+    nidNumber:           { type: String, trim: true },
     nidDocUrl:           { type: String },
+    tradeLicenseNumber:  { type: String, trim: true },
     hotelAuthDocUrl:     { type: String },
+    hotelName:           { type: String, trim: true },
+    hotelAddress:        { type: String, trim: true },
+    hotelCity:           { type: String, trim: true },
+    commissionRate:      { type: Number, default: 10 },
 
     // ── Push Notification Tokens (FCM) ────────────────────────
     // Stored as an array so one user can receive push on phone + browser simultaneously.

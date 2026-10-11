@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const mongoose = require('mongoose');
 const Experience = require('../models/Experience');
 const ExperienceBooking = require('../models/ExperienceBooking');
 const ExperienceReview = require('../models/ExperienceReview');
@@ -13,7 +14,13 @@ router.get('/', async (req, res) => {
     const { city, category, tag, minPrice, maxPrice, minRating, query, sortBy, isActive, ownerId } = req.query;
     const filter = {};
     if (isActive !== undefined) filter.isActive = isActive === 'true';
-    if (ownerId) filter.owner = ownerId;
+    if (ownerId) {
+      if (mongoose.Types.ObjectId.isValid(ownerId)) {
+        filter.owner = ownerId;
+      } else {
+        filter.owner = null; // won't cast-fail and returns [] safely
+      }
+    }
     if (city) filter.city = new RegExp(city, 'i');
     if (category) filter.category = category;
     if (tag) filter.tags = tag;

@@ -1,11 +1,23 @@
 > **BrainSync Context Pumper** 🧠
-> Dynamically loaded for active file: `src\components\ExperiencesAISection.tsx` (Domain: **Frontend (React/UI)**)
+> Dynamically loaded for active file: `src\pages\admin\panels\ComplaintsPanel.tsx` (Domain: **Frontend (React/UI)**)
 
 ### 📐 Frontend (React/UI) Conventions & Fixes
+- **[what-changed] 🟢 Edited src/pages/admin/components/BookingDetailModal.tsx (25 changes, 231min)**: Active editing session on src/pages/admin/components/BookingDetailModal.tsx.
+25 content changes over 231 minutes.
+- **[what-changed] 🟢 Edited src/components/ExperiencesAISection.tsx (40 changes, 236min)**: Active editing session on src/components/ExperiencesAISection.tsx.
+40 content changes over 236 minutes.
+- **[what-changed] 🟢 Edited src/pages/BecomeAHost.tsx (21 changes, 104min)**: Active editing session on src/pages/BecomeAHost.tsx.
+21 content changes over 104 minutes.
+- **[what-changed] 🟢 Edited src/pages/PropertyDetails.tsx (13 changes, 90min)**: Active editing session on src/pages/PropertyDetails.tsx.
+13 content changes over 90 minutes.
+- **[what-changed] 🟢 Edited src/pages/PropertyDetails.tsx (19 changes, 31min)**: Active editing session on src/pages/PropertyDetails.tsx.
+19 content changes over 31 minutes.
 - **[what-changed] 🟢 Edited src/components/SpotHotelsModal.tsx (10 changes, 86min)**: Active editing session on src/components/SpotHotelsModal.tsx.
 10 content changes over 86 minutes.
 - **[what-changed] 🟢 Edited src/components/TouristSpotToBooking.tsx (9 changes, 71min)**: Active editing session on src/components/TouristSpotToBooking.tsx.
 9 content changes over 71 minutes.
+- **[what-changed] 🟢 Edited src/pages/NationalProposal.tsx (11 changes, 183min)**: Active editing session on src/pages/NationalProposal.tsx.
+11 content changes over 183 minutes.
 - **[decision] Optimized Sparkles — fixes memory leak from uncleared timers**: -   Building2, Sparkles, Compass, Key, Star, ShieldCheck, 
 +   Building2, Sparkles, Compass, Zap, Waves
 -   Zap, Award, MapPin, CheckCircle2, HeartHandshake, Waves
@@ -76,14 +88,6 @@
 … [diff truncated]
 
 📌 IDE AST Context: Modified symbols likely include [StayBuddyLoaderProps, STEPS, StayBuddyLoader, default]
-- **[what-changed] 🟢 Edited src/pages/BecomeAHost.tsx (21 changes, 104min)**: Active editing session on src/pages/BecomeAHost.tsx.
-21 content changes over 104 minutes.
-- **[what-changed] 🟢 Edited src/pages/PropertyDetails.tsx (13 changes, 90min)**: Active editing session on src/pages/PropertyDetails.tsx.
-13 content changes over 90 minutes.
-- **[what-changed] 🟢 Edited src/pages/PropertyDetails.tsx (19 changes, 31min)**: Active editing session on src/pages/PropertyDetails.tsx.
-19 content changes over 31 minutes.
-- **[what-changed] 🟢 Edited src/pages/NationalProposal.tsx (11 changes, 183min)**: Active editing session on src/pages/NationalProposal.tsx.
-11 content changes over 183 minutes.
 - **[problem-fix] problem-fix in Index.tsx**: -                     }
 +                         setLoading(false);
 -                 })

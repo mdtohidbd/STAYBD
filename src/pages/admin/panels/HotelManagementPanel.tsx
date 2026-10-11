@@ -1,5 +1,18 @@
 import React, { useState } from "react";
-import { Building2, Bed, CheckCircle, Trash2, Flag, Ban, Plus, Search, Filter, Sparkles, MapPin } from "lucide-react";
+import {
+    Building2,
+    Bed,
+    CheckCircle,
+    Trash2,
+    Flag,
+    Ban,
+    Plus,
+    Search,
+    Filter,
+    Sparkles,
+    MapPin,
+    ExternalLink
+} from "lucide-react";
 import { api, Hotel, Room, UserProfile, HotelOwner } from "../../../services/api";
 import { StatCard, Badge, ActionBtn } from "../components/AdminUIElements";
 import { AddHotelModal, AddRoomModal } from "../../owner/components/OwnerModals";
@@ -21,8 +34,8 @@ export default function HotelManagementPanel({ hotels, rooms, userList, reload }
     const owners = userList.filter(u => u.role === "OWNER") as HotelOwner[];
     const defaultOwnerId = owners[0]?.id || userList[0]?.id || "admin_owner";
 
-    const vacantRooms = rooms.reduce((sum, r) => sum + r.availableCount, 0);
-    const totalRooms = rooms.reduce((sum, r) => sum + r.totalInventory, 0);
+    const vacantRooms = rooms.reduce((sum, r) => sum + (r.availableCount || 0), 0);
+    const totalRooms = rooms.reduce((sum, r) => sum + (r.totalInventory || 0), 0);
 
     // Unique cities/spots for filter dropdown
     const cities = ["ALL", ...Array.from(new Set(hotels.map(h => h.city).filter(Boolean)))];
@@ -45,32 +58,32 @@ export default function HotelManagementPanel({ hotels, rooms, userList, reload }
     });
 
     return (
-        <div className="space-y-8 relative">
+        <div className="space-y-6 animate-in fade-in duration-500">
             {/* Overview & Action Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <StatCard label="Total Properties" value={hotels.length} color="slate" icon={<Building2 className="w-4 h-4" />} subLabel="Verified Live Registry" />
-                <StatCard label="Room Configurations" value={rooms.length} color="slate" icon={<Bed className="w-4 h-4" />} subLabel="Active Configurations" />
-                <StatCard label="Live Vacancy" value={`${vacantRooms} / ${totalRooms}`} color="green" icon={<CheckCircle className="w-4 h-4" />} subLabel="Available Inventory" />
+                <StatCard label="Total Properties" value={hotels.length} color="indigo" icon={<Building2 className="w-5 h-5" />} subLabel="Verified Live Registry" />
+                <StatCard label="Room Configurations" value={rooms.length} color="purple" icon={<Bed className="w-5 h-5" />} subLabel="Active Configurations" />
+                <StatCard label="Available Vacancy" value={`${vacantRooms} / ${totalRooms}`} color="green" icon={<CheckCircle className="w-5 h-5" />} subLabel="Inventory Available" />
                 
                 {/* Admin Quick Creation Card */}
-                <div className="bg-gradient-to-br from-indigo-950/60 to-slate-900/80 backdrop-blur-xl rounded-2xl p-5 border border-indigo-500/30 flex flex-col justify-between shadow-2xl">
+                <div className="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-sm flex flex-col justify-between">
                     <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-indigo-400 flex items-center gap-1.5">
-                            <Sparkles className="w-3.5 h-3.5 text-indigo-400" /> Admin Live Control
+                        <span className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                            <Sparkles className="w-3.5 h-3.5 text-indigo-600" /> Admin Fast Actions
                         </span>
-                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                        <span className="w-2 h-2 rounded-full bg-emerald-500" />
                     </div>
-                    <div className="flex items-center gap-2 mt-3">
+                    <div className="flex items-center gap-2 mt-4">
                         <button
                             onClick={() => setShowAddHotel(true)}
-                            className="flex-1 px-3 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all shadow-lg shadow-indigo-600/30 active:scale-95"
+                            className="flex-1 px-3 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition shadow-xs"
                         >
-                            <Plus className="w-3.5 h-3.5" /> New Hotel
+                            <Plus className="w-3.5 h-3.5" /> New Property
                         </button>
                         {hotels.length > 0 && (
                             <button
                                 onClick={() => setSelectedHotelForRoom({ id: hotels[0].id, name: hotels[0].name })}
-                                className="px-3 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-indigo-300 border border-indigo-500/20 text-[11px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all active:scale-95"
+                                className="px-3 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200 text-xs font-bold flex items-center justify-center gap-1.5 transition"
                             >
                                 <Plus className="w-3.5 h-3.5" /> Room
                             </button>
@@ -80,41 +93,41 @@ export default function HotelManagementPanel({ hotels, rooms, userList, reload }
             </div>
 
             {/* Filter and Control Bar */}
-            <div className="bg-slate-900/60 backdrop-blur-xl p-4 rounded-2xl border border-white/5 shadow-2xl flex flex-col lg:flex-row items-center justify-between gap-4">
+            <div className="bg-white p-4 md:p-5 rounded-2xl border border-slate-200/90 shadow-sm flex flex-col lg:flex-row items-center justify-between gap-4">
                 {/* SubTab Toggle */}
                 <div className="flex gap-2 w-full lg:w-auto">
                     <button 
                         onClick={() => setSubTab("hotels")} 
-                        className={`flex-1 lg:flex-none px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${
+                        className={`flex-1 lg:flex-none px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${
                             subTab === "hotels" 
-                                ? "bg-indigo-600 text-white shadow-xl shadow-indigo-600/20" 
-                                : "text-slate-400 hover:text-white bg-slate-800/40"
+                                ? "bg-indigo-600 text-white shadow-xs" 
+                                : "text-slate-600 hover:text-slate-900 bg-slate-50 border border-slate-200"
                         }`}
                     >
                         <Building2 className="w-4 h-4" /> Properties ({hotels.length})
                     </button>
                     <button 
                         onClick={() => setSubTab("rooms")} 
-                        className={`flex-1 lg:flex-none px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${
+                        className={`flex-1 lg:flex-none px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${
                             subTab === "rooms" 
-                                ? "bg-indigo-600 text-white shadow-xl shadow-indigo-600/20" 
-                                : "text-slate-400 hover:text-white bg-slate-800/40"
+                                ? "bg-indigo-600 text-white shadow-xs" 
+                                : "text-slate-600 hover:text-slate-900 bg-slate-50 border border-slate-200"
                         }`}
                     >
-                        <Bed className="w-4 h-4" /> Room Configurations ({rooms.length})
+                        <Bed className="w-4 h-4" /> Room Inventory ({rooms.length})
                     </button>
                 </div>
 
                 {/* Search & City Filter */}
                 <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto">
                     <div className="relative flex-1 sm:w-64">
-                        <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                        <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                         <input
                             type="text"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            placeholder="Search by hotel name, city..."
-                            className="w-full bg-slate-950/70 border border-slate-800 rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition"
+                            placeholder="Search hotel name, location..."
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-3 py-2 text-xs md:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition"
                         />
                     </div>
 
@@ -122,11 +135,11 @@ export default function HotelManagementPanel({ hotels, rooms, userList, reload }
                         <select
                             value={selectedCity}
                             onChange={(e) => setSelectedCity(e.target.value)}
-                            className="bg-slate-950/70 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-300 focus:outline-none focus:border-indigo-500"
+                            className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         >
                             {cities.map(c => (
-                                <option key={c} value={c} className="bg-slate-900">
-                                    {c === "ALL" ? "All Tourist Zones" : c}
+                                <option key={c} value={c}>
+                                    {c === "ALL" ? "All Locations" : c}
                                 </option>
                             ))}
                         </select>
@@ -134,80 +147,79 @@ export default function HotelManagementPanel({ hotels, rooms, userList, reload }
 
                     <button
                         onClick={() => subTab === "hotels" ? setShowAddHotel(true) : setSelectedHotelForRoom(hotels[0] ? { id: hotels[0].id, name: hotels[0].name } : null)}
-                        className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-black text-xs uppercase tracking-wider flex items-center gap-1.5 transition shadow-lg shadow-emerald-600/20 active:scale-95 shrink-0"
+                        className="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs flex items-center gap-1.5 transition shadow-xs shrink-0"
                     >
-                        <Plus className="w-3.5 h-3.5 stroke-[3]" />
-                        <span>{subTab === "hotels" ? "Add Property" : "Add Room"}</span>
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>{subTab === "hotels" ? "Add Hotel" : "Add Room"}</span>
                     </button>
                 </div>
             </div>
 
             {/* Hotels Table */}
             {subTab === "hotels" && (
-                <div className="bg-slate-900/40 backdrop-blur-xl rounded-[24px] border border-white/5 overflow-hidden shadow-2xl">
+                <div className="bg-white rounded-3xl border border-slate-200/90 overflow-hidden shadow-sm">
                     <div className="overflow-x-auto">
-                        <table className="w-full text-[11px] min-w-[850px]">
-                            <thead className="bg-slate-950/50 text-slate-500 uppercase text-[9px] font-black tracking-[0.2em]">
+                        <table className="w-full text-sm min-w-[900px]">
+                            <thead className="bg-slate-50 text-slate-500 uppercase text-[11px] font-bold tracking-wider border-b border-slate-200">
                                 <tr>
-                                    <th className="py-3.5 px-6 text-left">Property & Image</th>
-                                    <th className="py-3.5 px-6 text-left">Destination & Zone</th>
-                                    <th className="py-3.5 px-6 text-center">Status</th>
-                                    <th className="py-3.5 px-6 text-center">Verification</th>
-                                    <th className="py-3.5 px-6 text-center">Protocol</th>
-                                    <th className="py-3.5 px-6 text-right">Instant Controls</th>
+                                    <th className="py-4 px-6 text-left">Property Details</th>
+                                    <th className="py-4 px-6 text-left">City & Location</th>
+                                    <th className="py-4 px-6 text-center">Status</th>
+                                    <th className="py-4 px-6 text-center">Verification</th>
+                                    <th className="py-4 px-6 text-center">Risk Flag</th>
+                                    <th className="py-4 px-6 text-right">Quick Controls</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-800/50">
+                            <tbody className="divide-y divide-slate-100">
                                 {filteredHotels.map(h => {
-                                    const ownerName = owners.find(o => o.id === h.ownerId)?.name || "Stay Buddy Operator";
+                                    const ownerName = owners.find(o => o.id === h.ownerId)?.name || "StayBD Partner";
                                     return (
-                                        <tr key={h.id} className="group hover:bg-slate-800/40 transition-all border-b border-white/[0.02] last:border-0">
+                                        <tr key={h.id} className="hover:bg-slate-50/60 transition-colors">
                                             <td className="py-4 px-6">
                                                 <div className="flex items-center gap-3.5">
-                                                    <div className="w-14 h-11 rounded-xl bg-slate-800 border border-white/10 overflow-hidden shadow-lg shrink-0">
+                                                    <div className="w-14 h-11 rounded-xl bg-slate-100 border border-slate-200 overflow-hidden shadow-xs shrink-0">
                                                         <img 
                                                             src={h.images?.[0] || "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400"} 
                                                             alt="" 
-                                                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
+                                                            className="w-full h-full object-cover group-hover:scale-105 transition-transform" 
                                                         />
                                                     </div>
                                                     <div>
-                                                        <p className="font-bold text-white text-[13px] tracking-tight mb-0.5">{h.name}</p>
-                                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-                                                            Operator: {ownerName} · ⭐ {h.rating || 4.5}
+                                                        <p className="font-bold text-slate-900 text-xs tracking-tight mb-0.5">{h.name}</p>
+                                                        <p className="text-[11px] text-slate-500">
+                                                            Owner: {ownerName} · ⭐ {h.rating || 4.5}
                                                         </p>
                                                     </div>
                                                 </div>
                                             </td>
                                             <td className="py-4 px-6">
-                                                <div className="flex items-center gap-1.5 text-emerald-400 font-bold text-xs mb-0.5">
-                                                    <MapPin className="w-3 h-3 shrink-0" />
+                                                <div className="flex items-center gap-1 text-slate-800 font-semibold text-xs mb-0.5">
+                                                    <MapPin className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
                                                     <span>{h.city}</span>
                                                 </div>
-                                                <p className="text-[10px] text-slate-400 font-medium truncate max-w-[180px]">{h.address}</p>
+                                                <p className="text-[11px] text-slate-400 truncate max-w-[180px]">{h.address}</p>
                                             </td>
-                                            <td className="py-4 px-6 text-center uppercase">
+                                            <td className="py-4 px-6 text-center">
                                                 <Badge color={h.isActive ? "green" : "red"}>{h.isActive ? "Active" : "Offline"}</Badge>
                                             </td>
-                                            <td className="py-4 px-6 text-center uppercase">
+                                            <td className="py-4 px-6 text-center">
                                                 <Badge color={h.isVerified ? "blue" : "amber"}>{h.isVerified ? "Verified" : "Pending"}</Badge>
                                             </td>
-                                            <td className="py-4 px-6 text-center uppercase">
-                                                <Badge color={h.isRedMarked ? "red" : "slate"}>{h.isRedMarked ? "Critical" : "Standard"}</Badge>
+                                            <td className="py-4 px-6 text-center">
+                                                <Badge color={h.isRedMarked ? "red" : "slate"}>{h.isRedMarked ? "Flagged" : "Normal"}</Badge>
                                             </td>
                                             <td className="py-4 px-6">
-                                                <div className="flex items-center justify-end gap-2">
-                                                    {/* Quick Add Room */}
+                                                <div className="flex items-center justify-end gap-1.5">
                                                     <button
                                                         onClick={() => setSelectedHotelForRoom({ id: h.id, name: h.name })}
                                                         title="Add Room to this Hotel"
-                                                        className="px-2.5 py-1.5 rounded-lg bg-indigo-500/15 hover:bg-indigo-500 text-indigo-300 hover:text-white border border-indigo-500/30 text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1"
+                                                        className="px-2.5 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-bold transition flex items-center gap-1"
                                                     >
                                                         <Plus className="w-3 h-3" /> Room
                                                     </button>
 
                                                     <ActionBtn 
-                                                        color={h.isVerified ? "slate" : "blue"} 
+                                                        color={h.isVerified ? "slate" : "green"} 
                                                         icon={<CheckCircle className="w-3.5 h-3.5" />} 
                                                         label={h.isVerified ? "Unverify" : "Verify"} 
                                                         onClick={async () => { await api.updateHotel(h.id, { isVerified: !h.isVerified }); reload(); }} 
@@ -221,17 +233,18 @@ export default function HotelManagementPanel({ hotels, rooms, userList, reload }
                                                     <ActionBtn 
                                                         color={h.isActive ? "slate" : "green"} 
                                                         icon={<Ban className="w-3.5 h-3.5" />} 
-                                                        label={h.isActive ? "Halt" : "Resume"} 
+                                                        label={h.isActive ? "Pause" : "Resume"} 
                                                         onClick={async () => { await api.toggleHotelActive(h.id); reload(); }} 
                                                     />
                                                     <button 
                                                         onClick={async () => { 
-                                                            if (confirm(`Decommission and remove "${h.name}" from live platform?`)) { 
+                                                            if (window.confirm(`Delete "${h.name}" from the platform?`)) { 
                                                                 await api.deleteHotel(h.id); 
                                                                 reload(); 
                                                             } 
                                                         }} 
-                                                        className="p-2 rounded-xl bg-rose-500/10 text-rose-500 border border-rose-500/20 hover:bg-rose-500 hover:text-white transition-all shadow-lg"
+                                                        title="Delete property"
+                                                        className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 border border-rose-200 transition"
                                                     >
                                                         <Trash2 className="w-3.5 h-3.5" />
                                                     </button>
@@ -243,15 +256,15 @@ export default function HotelManagementPanel({ hotels, rooms, userList, reload }
                                 {filteredHotels.length === 0 && (
                                     <tr>
                                         <td colSpan={6} className="py-16 text-center">
-                                            <Building2 className="w-12 h-12 text-slate-800 mx-auto mb-3" />
-                                            <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">
-                                                No Matching Properties Found
+                                            <Building2 className="w-10 h-10 text-slate-300 mx-auto mb-2" />
+                                            <p className="text-slate-700 font-bold text-sm">
+                                                No matching hotels found
                                             </p>
                                             <button
                                                 onClick={() => setShowAddHotel(true)}
                                                 className="mt-3 px-4 py-2 rounded-xl bg-indigo-600 text-white font-bold text-xs"
                                             >
-                                                + Register First Property
+                                                + Register Hotel
                                             </button>
                                         </td>
                                     </tr>
@@ -264,56 +277,55 @@ export default function HotelManagementPanel({ hotels, rooms, userList, reload }
 
             {/* Rooms Table */}
             {subTab === "rooms" && (
-                <div className="bg-slate-900/40 backdrop-blur-xl rounded-[28px] border border-slate-800 overflow-hidden shadow-2xl">
+                <div className="bg-white rounded-3xl border border-slate-200/90 overflow-hidden shadow-sm">
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm min-w-[900px]">
-                            <thead className="bg-slate-950/50 text-slate-500 uppercase text-[10px] font-black tracking-[0.2em]">
+                            <thead className="bg-slate-50 text-slate-500 uppercase text-[11px] font-bold tracking-wider border-b border-slate-200">
                                 <tr>
-                                    <th className="py-4 px-6 text-left">Parent Hotel</th>
+                                    <th className="py-4 px-6 text-left">Hotel Property</th>
                                     <th className="py-4 px-6 text-left">Room Configuration</th>
                                     <th className="py-4 px-6 text-right">Price / Night</th>
                                     <th className="py-4 px-6 text-center">Total Inventory</th>
-                                    <th className="py-4 px-6 text-center">Live Available</th>
+                                    <th className="py-4 px-6 text-center">Available Units</th>
                                     <th className="py-4 px-6 text-right">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-800/50">
+                            <tbody className="divide-y divide-slate-100">
                                 {filteredRooms.map(r => (
-                                    <tr key={r.id} className="group hover:bg-slate-800/30 transition-colors">
-                                        <td className="py-4 px-6 font-bold text-white text-xs uppercase tracking-tight">
+                                    <tr key={r.id} className="hover:bg-slate-50/60 transition-colors">
+                                        <td className="py-4 px-6 font-bold text-slate-900 text-xs">
                                             {r.hotelName}
                                         </td>
                                         <td className="py-4 px-6">
-                                            <div className="bg-slate-800/60 border border-slate-700 px-3 py-1 rounded-xl inline-block">
-                                                <span className="text-slate-200 text-xs font-bold uppercase tracking-wider">
-                                                    {r.type}
-                                                </span>
-                                            </div>
+                                            <span className="bg-slate-100 text-slate-700 border border-slate-200 px-3 py-1 rounded-lg text-xs font-semibold">
+                                                {r.type}
+                                            </span>
                                         </td>
-                                        <td className="py-4 px-6 text-right font-black text-emerald-400 text-base">
+                                        <td className="py-4 px-6 text-right font-black text-slate-900 text-sm">
                                             ৳{r.pricePerNight?.toLocaleString()}
                                         </td>
-                                        <td className="py-4 px-6 text-center text-slate-400 font-black text-base">
-                                            {r.totalInventory}
+                                        <td className="py-4 px-6 text-center text-slate-600 font-bold text-xs">
+                                            {r.totalInventory} Units
                                         </td>
                                         <td className="py-4 px-6 text-center">
-                                            <div className={`inline-flex items-center justify-center min-w-[36px] h-8 px-2.5 rounded-xl font-black text-xs border ${
+                                            <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-bold border ${
                                                 r.availableCount > 0 
-                                                    ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" 
-                                                    : "bg-rose-500/10 text-rose-400 border-rose-500/20"
+                                                    ? "bg-emerald-50 text-emerald-700 border-emerald-200" 
+                                                    : "bg-rose-50 text-rose-700 border-rose-200"
                                             }`}>
-                                                {r.availableCount}
-                                            </div>
+                                                {r.availableCount} Available
+                                            </span>
                                         </td>
                                         <td className="py-4 px-6 text-right">
                                             <button 
                                                 onClick={async () => { 
-                                                    if (confirm(`Remove room configuration "${r.type}"?`)) { 
+                                                    if (window.confirm(`Remove room configuration "${r.type}"?`)) { 
                                                         await api.deleteRoom(r.id); 
                                                         reload(); 
                                                     } 
                                                 }} 
-                                                className="p-2.5 rounded-xl bg-rose-900/20 text-rose-500 border border-rose-500/20 hover:bg-rose-600 hover:text-white transition-all shadow-xl"
+                                                className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 border border-rose-200 transition"
+                                                title="Delete room"
                                             >
                                                 <Trash2 className="w-3.5 h-3.5" />
                                             </button>
@@ -323,9 +335,9 @@ export default function HotelManagementPanel({ hotels, rooms, userList, reload }
                                 {filteredRooms.length === 0 && (
                                     <tr>
                                         <td colSpan={6} className="py-16 text-center">
-                                            <Bed className="w-12 h-12 text-slate-800 mx-auto mb-3" />
-                                            <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">
-                                                No Active Room Configurations
+                                            <Bed className="w-10 h-10 text-slate-300 mx-auto mb-2" />
+                                            <p className="text-slate-700 font-bold text-sm">
+                                                No active room configurations found
                                             </p>
                                         </td>
                                     </tr>
@@ -336,8 +348,7 @@ export default function HotelManagementPanel({ hotels, rooms, userList, reload }
                 </div>
             )}
 
-            {/* ═══════════ MODALS ═══════════ */}
-            {/* Add Hotel Modal */}
+            {/* Modals */}
             {showAddHotel && (
                 <AddHotelModal
                     ownerId={defaultOwnerId}
@@ -349,7 +360,6 @@ export default function HotelManagementPanel({ hotels, rooms, userList, reload }
                 />
             )}
 
-            {/* Add Room Modal */}
             {selectedHotelForRoom && (
                 <AddRoomModal
                     hotelId={selectedHotelForRoom.id}
@@ -363,4 +373,3 @@ export default function HotelManagementPanel({ hotels, rooms, userList, reload }
         </div>
     );
 }
-

@@ -5,6 +5,9 @@ const Notification = require('../models/Notification');
 // GET /api/notifications/:recipientId
 router.get('/:recipientId', async (req, res) => {
   try {
+    if (!req.params.recipientId || req.params.recipientId === 'undefined') {
+      return res.json([]);
+    }
     const notifs = await Notification.find({ recipientId: req.params.recipientId }).sort({ createdAt: -1 }).lean();
     res.json(notifs.map(n => ({ ...n, id: n._id.toString() })));
   } catch (err) { res.status(500).json({ message: err.message }); }
