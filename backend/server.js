@@ -15,6 +15,19 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 if (process.env.NODE_ENV !== 'production') app.use(morgan('dev'));
 
+// ── Check DB readiness for API routes (except health check) ──
+app.use('/api', (req, res, next) => {
+  if (req.path === '/health') return next();
+  const mongoose = require('mongoose');
+  if (mongoose.connection.readyState !== 1) {
+    return res.status(503).json({
+      success: false,
+      message: 'Database is connecting, please retry in a few seconds.',
+    });
+  }
+  next();
+});
+
 // ── Routes ──
 app.use('/api/auth',          require('./routes/authRoutes'));
 app.use('/api/users',         require('./routes/userRoutes'));

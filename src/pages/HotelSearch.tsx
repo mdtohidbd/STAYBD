@@ -405,6 +405,8 @@ export default function HotelSearch() {
       setHotels(res.hotels as HotelWithRooms[]);
       const ids = new Set<string>((offers as any[]).filter((o: any) => o.isActive).map((o: any) => o.hotelId as string));
       setOfferHotelIds(ids);
+    }).catch(err => {
+      console.warn("Hotel search fetch error:", err);
     }).finally(() => setLoading(false));
   }, [filters.searchQuery, filters.checkIn, filters.checkOut, filters.adults, filters.children, filters.roomsCount]);
 
