@@ -30,7 +30,7 @@ const Header = () => {
   ];
 
   return (
-    <header className="sticky top-0 z-50 bg-white border-b border-gray-100 shadow-sm">
+    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-200/80 shadow-xs transition-all duration-300">
       <div className="max-w-7xl mx-auto px-4 md:px-6">
         {/* Desktop Header */}
         <div className="hidden md:flex items-center justify-between h-16">
