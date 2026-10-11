@@ -12,6 +12,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import SpotHotelsModal from "@/components/SpotHotelsModal";
+import TouristSpotToBooking from "@/components/TouristSpotToBooking";
 import { TouristSpot } from "@/components/ExploreBangladeshMap";
 
 // All 8 Administrative Divisions of Bangladesh
