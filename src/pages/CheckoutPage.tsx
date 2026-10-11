@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { useSearch } from "../context/SearchContext";
 import { SPOT_HOTELS } from "../components/SpotHotelsModal";
+import BookingSuccessVoucher from "../components/BookingSuccessVoucher";
 
 type Step = "SELECT" | "DETAILS" | "SUCCESS";
 
@@ -413,23 +414,22 @@ export default function CheckoutPage() {
     );
   }
 
-  // ---- RENDER: SUCCESS ----
+  // ---- RENDER: SUCCESS (State-of-the-art Digital Booking Voucher & Pass) ----
   if (step === "SUCCESS" && result) {
     return (
-      <div className="min-h-screen bg-[#f5f5f5] pt-12 pb-20">
-        <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
-          <CheckCircle className="w-20 h-20 text-green-600 mx-auto mb-6" />
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">Your booking is confirmed!</h2>
-          <p className="text-lg text-gray-600 mb-6">{result.message}</p>
-          <div className="bg-[#f0f6ff] border border-[#d6e5ff] rounded p-4 mb-8 text-left inline-block w-full">
-            <h3 className="font-bold text-[#003b95] text-lg mb-2">Booking ID: {result.booking.id}</h3>
-            <p className="text-gray-800 text-sm">We've sent a confirmation email to <strong>{email}</strong>.</p>
-          </div>
-          <button onClick={() => navigate("/dashboard")} className="bg-[#003b95] text-white px-8 py-3 rounded font-bold hover:bg-[#002f7a]">
-            Manage Booking Options
-          </button>
-        </div>
-      </div>
+      <BookingSuccessVoucher
+        booking={result.booking}
+        hotel={hotel}
+        selectedRoom={selectedRoom}
+        checkIn={checkIn}
+        checkOut={checkOut}
+        nights={nights}
+        guestName={`${firstName} ${lastName}`.trim() || user?.fullName || "Guest"}
+        guestEmail={email}
+        guestPhone={phone}
+        paymentMethod={paymentMethod}
+        specialRequests={specialRequests}
+      />
     );
   }
 

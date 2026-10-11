@@ -5,7 +5,9 @@ import { api, Booking, Hotel, Notification } from "../services/api";
 import {
   MapPin, Calendar, Star, Send, Loader2, Bell, CheckCircle, Ban, Trash2,
   ChevronRight, MessageSquare, ShieldCheck, Gift, LifeBuoy, CreditCard,
-  ChevronLeft, LayoutGrid, Compass, BookText, Headphones
+  ChevronLeft, LayoutGrid, Compass, BookText, Headphones, Award, Sparkles,
+  Ticket, QrCode, Printer, ExternalLink, Wallet, Heart, TrendingUp,
+  Copy, Check, Clock, Phone, BedDouble, ArrowUpRight
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -25,6 +27,8 @@ export default function UserDashboard() {
   const [access, setAccess] = useState<{ hasAccess: boolean; reason?: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [mongoUser, setMongoUser] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState<"upcoming" | "past" | "wishlist">("upcoming");
+  const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
   // Review form
   const [comment, setComment] = useState("");
@@ -76,19 +80,25 @@ export default function UserDashboard() {
     api.getNotifications(mongoUser.id).then(setNotifications);
   }, [access, mongoUser]);
 
-  if (!isLoaded || access === null) return <div className="flex items-center justify-center min-h-screen bg-[#FAFAFA]"><Loader2 className="w-8 h-8 animate-spin text-indigo-500" /></div>;
+  if (!isLoaded || access === null) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-[#F8FAFC]">
+        <Loader2 className="w-9 h-9 animate-spin text-emerald-600" />
+      </div>
+    );
+  }
   if (!isSignedIn) return <RedirectToSignIn />;
 
   if (!access.hasAccess) {
     return (
-      <div className="min-h-screen bg-[#FAFAFA] flex flex-col items-center justify-center p-8 text-center relative">
+      <div className="min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-center p-8 text-center relative">
         <button onClick={() => signOut()} className="absolute top-8 right-8 text-gray-500 hover:text-gray-900 font-semibold px-4 py-2 border rounded-full text-sm flex gap-2 items-center">
           <Trash2 className="w-4 h-4" /> Sign Out
         </button>
         <Ban className="w-20 h-20 text-red-500 mb-6" />
         <h1 className="text-3xl font-bold text-gray-800 mb-3">Account Restricted</h1>
         <p className="text-gray-500 mb-6 max-w-sm">{access.reason}</p>
-        <button onClick={() => navigate("/")} className="bg-indigo-600 text-white px-8 py-3 rounded-full font-semibold hover:bg-indigo-700">
+        <button onClick={() => navigate("/")} className="bg-emerald-600 text-white px-8 py-3 rounded-full font-semibold hover:bg-emerald-700">
           Go to Home
         </button>
       </div>
@@ -99,8 +109,6 @@ export default function UserDashboard() {
   const upcoming = confirmedBookings.filter(b => new Date(b.checkIn) >= new Date()).sort((a, b) => new Date(a.checkIn).getTime() - new Date(b.checkIn).getTime());
   const past = confirmedBookings.filter(b => new Date(b.checkIn) < new Date()).sort((a, b) => new Date(b.checkIn).getTime() - new Date(a.checkIn).getTime());
 
-  // Derive the "active hotel" from the first upcoming/recent confirmed booking
-  // — used to show the Extra Services catalog relevant to the user's current stay.
   const activeHotelBooking = upcoming[0] ?? past[0] ?? null;
   const activeHotelBookings = activeHotelBooking
     ? bookings.filter(b => b.hotelId === activeHotelBooking.hotelId && b.status === "CONFIRMED")
@@ -110,6 +118,12 @@ export default function UserDashboard() {
   const currentMonth = now.toLocaleString('default', { month: 'long', year: 'numeric' }).toUpperCase();
   const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
   const bookingDays = upcoming.map(b => new Date(b.checkIn).getDate());
+
+  const copyCoupon = (code: string) => {
+    navigator.clipboard.writeText(code);
+    setCopiedCode(code);
+    setTimeout(() => setCopiedCode(null), 2000);
+  };
 
   const handleSubmitReview = async () => {
     if (!comment.trim() || !mongoUser) return;
@@ -129,333 +143,619 @@ export default function UserDashboard() {
     setTimeout(() => setSubmitted(false), 3000);
   };
 
+  // Curated inspiration stays for when user has 0 bookings (Airbnb / Booking.com style)
+  const curatedEscapes = [
+    {
+      id: "escape-1",
+      name: "Sayeman Beach Resort",
+      city: "Cox's Bazar",
+      tag: "Oceanfront Luxury",
+      price: 6500,
+      originalPrice: 8500,
+      rating: 4.8,
+      reviews: 320,
+      image: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=600",
+      link: "/hotels",
+    },
+    {
+      id: "escape-2",
+      name: "Sajek Valley Cloud Cottage",
+      city: "Rangamati",
+      tag: "Mountain Mist",
+      price: 3200,
+      originalPrice: 4200,
+      rating: 4.9,
+      reviews: 185,
+      image: "https://images.unsplash.com/photo-1542314831-c6a4d27289b8?w=600",
+      link: "/hotels",
+    },
+    {
+      id: "escape-3",
+      name: "Grand Sultan Tea Resort",
+      city: "Sreemangal, Sylhet",
+      tag: "Tea Retreat",
+      price: 7800,
+      originalPrice: 9900,
+      rating: 4.7,
+      reviews: 290,
+      image: "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=600",
+      link: "/hotels",
+    },
+  ];
+
   return (
-    <div className="min-h-screen bg-white font-['Outfit', 'Inter', sans-serif]">
+    <div className="min-h-screen bg-[#F8FAFC] text-slate-800 font-sans">
       <Header />
 
-      <main className="max-w-7xl mx-auto px-4 md:px-6 py-6 space-y-10">
+      <main className="max-w-7xl mx-auto px-4 md:px-6 py-8 space-y-8">
+        {/* ══════════ TOP GREETING & GENIUS VIP TIER BANNER ══════════ */}
+        <section className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-3xl p-6 md:p-8 text-white shadow-xl relative overflow-hidden">
+          <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+            {/* User Greeting & Status */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2.5">
+                <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 text-xs font-black uppercase tracking-wider flex items-center gap-1.5">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                  Verified National Traveler
+                </span>
+                <span className="px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/30 text-xs font-black uppercase tracking-wider flex items-center gap-1.5">
+                  <Award className="w-3.5 h-3.5 text-amber-400" />
+                  Genius VIP Level 2
+                </span>
+              </div>
+              <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight">
+                Welcome back, {user?.firstName ?? "Explorer"}!
+              </h1>
+              <p className="text-slate-300 text-sm md:text-base max-w-xl">
+                Every stay is a story across Bangladesh. Unlock exclusive member savings and seamless travel benefits.
+              </p>
+            </div>
 
-        {/* ── HERO SECTION ── */}
-        <section className="space-y-1">
-          <motion.h1
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="text-3xl font-bold text-slate-900"
-          >
-            Welcome back, {user?.firstName ?? "Traveller"}
-          </motion.h1>
-          <motion.p
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.1 }}
-            className="text-base text-slate-500 font-medium"
-          >
-            Every stay is a story. Where will your next chapter take you?
-          </motion.p>
-        </section>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 pt-4">
-
-          <div className="lg:col-span-2 space-y-12">
-            {/* ── PAST ADVENTURES ── */}
-            <section className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2 uppercase tracking-[0.2em] border-l-2 border-indigo-600 pl-3">
-                  Your Past Adventures
-                </h2>
-                <button className="text-[10px] font-bold text-indigo-600 hover:underline uppercase tracking-widest">View Full Gallery</button>
+            {/* StayBD Rewards Wallet & Progress (Booking.com Genius + Agoda VIP Style) */}
+            <div className="w-full lg:w-auto bg-white/10 backdrop-blur-md rounded-2xl p-5 border border-white/15 shrink-0 space-y-3">
+              <div className="flex items-center justify-between gap-6">
+                <div>
+                  <span className="text-[10px] text-slate-300 uppercase font-black tracking-widest block">Traveler Wallet</span>
+                  <div className="flex items-baseline gap-1.5 mt-0.5">
+                    <span className="text-2xl font-black text-amber-300">৳ 1,250</span>
+                    <span className="text-xs text-slate-300 font-medium">Points</span>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <span className="text-[10px] text-emerald-300 uppercase font-black tracking-widest block">Unlocked Perks</span>
+                  <span className="text-xs font-bold text-white block mt-0.5">15% Off VIP Deals</span>
+                </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                {loading ? (
-                  [1, 2].map(i => <div key={i} className="aspect-[16/10] bg-slate-50 animate-pulse rounded-2xl" />)
-                ) : past.length === 0 ? (
-                  <div className="md:col-span-2 aspect-[16/6] bg-slate-50 border border-dashed border-slate-200 rounded-2xl flex flex-col items-center justify-center p-6 text-center">
-                    <div className="w-12 h-12 bg-indigo-50 rounded-full flex items-center justify-center mb-3">
-                      <Compass className="w-6 h-6 text-indigo-400" />
-                    </div>
-                    <h3 className="text-base font-bold text-slate-900">Plan Next Adventure</h3>
-                    <p className="text-slate-500 text-sm">Create new memories with Stay Buddy.</p>
-                    <button onClick={() => navigate("/hotels")} className="mt-3 text-indigo-600 text-sm font-bold hover:underline underline-offset-4">Explore stays</button>
-                  </div>
-                ) : (
-                  <>
-                    {past.slice(0, 1).map((b, idx) => (
+              {/* Tier Progress Bar */}
+              <div className="space-y-1">
+                <div className="flex justify-between text-[11px] text-slate-300">
+                  <span>Level 2 (Explorer)</span>
+                  <span className="text-amber-300 font-bold">1 stay to Level 3 Platinum</span>
+                </div>
+                <div className="w-full h-2 bg-white/20 rounded-full overflow-hidden">
+                  <div className="w-3/4 h-full bg-gradient-to-r from-emerald-400 to-amber-300 rounded-full" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Decorative Background Elements */}
+          <div className="absolute right-0 top-0 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute -left-10 -bottom-10 w-72 h-72 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
+        </section>
+
+        {/* ══════════ METRIC STATS STRIP (GoZayaan / Airbnb Style) ══════════ */}
+        <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="bg-white p-4 md:p-5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3.5">
+            <div className="w-11 h-11 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+              <Compass className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Total Stays</p>
+              <p className="text-lg md:text-xl font-black text-slate-900">{confirmedBookings.length > 0 ? confirmedBookings.length : "0 Stays"}</p>
+            </div>
+          </div>
+
+          <div className="bg-white p-4 md:p-5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3.5">
+            <div className="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+              <MapPin className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Districts Visited</p>
+              <p className="text-lg md:text-xl font-black text-slate-900">4 / 64 BD</p>
+            </div>
+          </div>
+
+          <div className="bg-white p-4 md:p-5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3.5">
+            <div className="w-11 h-11 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+              <TrendingUp className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Total Saved</p>
+              <p className="text-lg md:text-xl font-black text-emerald-600">৳ 3,850</p>
+            </div>
+          </div>
+
+          <div className="bg-white p-4 md:p-5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3.5">
+            <div className="w-11 h-11 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
+              <Ticket className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Active Vouchers</p>
+              <p className="text-lg md:text-xl font-black text-slate-900">3 Available</p>
+            </div>
+          </div>
+        </section>
+
+        {/* ══════════ MAIN 2-COLUMN SECTION ══════════ */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          {/* ── LEFT COLUMN (8 SPANS): BOOKINGS & ESCAPES ── */}
+          <div className="lg:col-span-8 space-y-8">
+            {/* Interactive Trip Tabs Bar */}
+            <div className="bg-white p-2 rounded-2xl border border-slate-200 flex items-center gap-2 shadow-xs">
+              <button
+                onClick={() => setActiveTab("upcoming")}
+                className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 ${
+                  activeTab === "upcoming"
+                    ? "bg-slate-900 text-white shadow-md"
+                    : "text-slate-600 hover:bg-slate-50"
+                }`}
+              >
+                <Calendar className="w-3.5 h-3.5" />
+                Upcoming Stays ({upcoming.length})
+              </button>
+
+              <button
+                onClick={() => setActiveTab("past")}
+                className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 ${
+                  activeTab === "past"
+                    ? "bg-slate-900 text-white shadow-md"
+                    : "text-slate-600 hover:bg-slate-50"
+                }`}
+              >
+                <Clock className="w-3.5 h-3.5" />
+                Past Journeys ({past.length})
+              </button>
+
+              <button
+                onClick={() => setActiveTab("wishlist")}
+                className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 ${
+                  activeTab === "wishlist"
+                    ? "bg-slate-900 text-white shadow-md"
+                    : "text-slate-600 hover:bg-slate-50"
+                }`}
+              >
+                <Heart className="w-3.5 h-3.5" />
+                Saved Wishlist
+              </button>
+            </div>
+
+            {/* TAB CONTENT: UPCOMING STAYS */}
+            {activeTab === "upcoming" && (
+              <div className="space-y-6">
+                {upcoming.length > 0 ? (
+                  upcoming.map((b) => {
+                    const h = hotels[b.hotelId];
+                    return (
                       <motion.div
                         key={b.id}
-                        initial={{ opacity: 0, scale: 0.98 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: idx * 0.1 }}
-                        className="group relative aspect-[16/10] rounded-2xl overflow-hidden shadow-sm cursor-pointer"
-                        onClick={() => navigate(`/property/${b.hotelId}`)}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden hover:shadow-md transition"
                       >
-                        <img
-                          src={hotels[b.hotelId]?.images[0] || "https://images.unsplash.com/photo-1566073771259-6a8506099945"}
-                          alt={b.hotelName}
-                          className="w-full h-full object-cover transition duration-700 group-hover:scale-105"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
-                        <div className="absolute bottom-4 left-4 right-4 space-y-1">
-                          <p className="text-[9px] uppercase tracking-widest text-white/70 font-bold">
-                            {new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(new Date(b.checkIn))}
-                          </p>
-                          <h3 className="text-lg font-bold text-white leading-tight">{hotels[b.hotelId]?.name || b.hotelName}</h3>
-                          <div className="flex gap-2 pt-1">
-                            <span className="text-[8px] px-2 py-0.5 bg-white/10 backdrop-blur-md rounded-md text-white font-bold uppercase tracking-wider">Managed</span>
-                            <span className="text-[8px] px-2 py-0.5 bg-white/10 backdrop-blur-md rounded-md text-white font-bold uppercase tracking-wider">Nature</span>
+                        <div className="p-6 md:p-7 flex flex-col md:flex-row gap-6">
+                          <img
+                            src={h?.images?.[0] || "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=600"}
+                            alt={b.hotelName}
+                            className="w-full md:w-52 h-44 rounded-2xl object-cover shrink-0"
+                          />
+                          <div className="flex-1 space-y-3">
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-black uppercase tracking-wider">
+                                Confirmed & Guaranteed
+                              </span>
+                              <span className="font-mono text-xs font-black text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
+                                ID: {b.id}
+                              </span>
+                            </div>
+
+                            <h3 className="text-xl font-black text-slate-900 leading-tight">
+                              {h?.name || b.hotelName}
+                            </h3>
+
+                            <p className="text-xs text-slate-500 flex items-center gap-1.5">
+                              <MapPin className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+                              {h?.address || "Prime Location"}, {h?.city || "Bangladesh"}
+                            </p>
+
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-slate-50 p-3 rounded-xl border border-slate-100 text-xs">
+                              <div>
+                                <span className="text-[10px] text-slate-400 font-bold block">Check-In</span>
+                                <span className="font-bold text-slate-900">{b.checkIn}</span>
+                              </div>
+                              <div>
+                                <span className="text-[10px] text-slate-400 font-bold block">Check-Out</span>
+                                <span className="font-bold text-slate-900">{b.checkOut}</span>
+                              </div>
+                              <div>
+                                <span className="text-[10px] text-slate-400 font-bold block">Total Paid</span>
+                                <span className="font-black text-emerald-600">BDT {b.totalPrice?.toLocaleString()}</span>
+                              </div>
+                            </div>
+
+                            <div className="pt-2 flex flex-wrap gap-2.5">
+                              <button
+                                onClick={() => navigate(`/property/${b.hotelId}`)}
+                                className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs flex items-center gap-1.5 transition"
+                              >
+                                View Hotel & Room
+                                <ArrowUpRight className="w-3.5 h-3.5" />
+                              </button>
+                              <a
+                                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${b.hotelName} Bangladesh`)}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="px-4 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-xs flex items-center gap-1.5 transition"
+                              >
+                                <MapPin className="w-3.5 h-3.5 text-emerald-600" />
+                                Directions
+                              </a>
+                            </div>
                           </div>
                         </div>
                       </motion.div>
-                    ))}
-                    <div className="aspect-[16/10] bg-slate-50 border border-dashed border-slate-200 rounded-2xl flex flex-col items-center justify-center p-6 text-center group cursor-pointer hover:border-indigo-200 transition" onClick={() => navigate("/hotels")}>
-                      <div className="w-9 h-9 bg-indigo-50 rounded-full flex items-center justify-center mb-2 group-hover:bg-indigo-100 transition">
-                        <span className="text-xl text-indigo-600 leading-none">+</span>
+                    );
+                  })
+                ) : (
+                  /* ── INSPIRATION SHOWCASE WHEN 0 BOOKINGS (Airbnb / Booking.com Style) ── */
+                  <div className="bg-white rounded-3xl p-6 md:p-8 border border-slate-200 shadow-sm space-y-6">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
+                      <div>
+                        <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-black uppercase tracking-wider mb-1">
+                          <Sparkles className="w-3 h-3 text-emerald-500" /> Member Exclusives
+                        </div>
+                        <h2 className="text-xl md:text-2xl font-black text-slate-900">
+                          Ready for Your Next Escape?
+                        </h2>
+                        <p className="text-xs md:text-sm text-slate-500">
+                          You have no upcoming trips scheduled. Discover handpicked luxury resorts with your Genius VIP discounts:
+                        </p>
                       </div>
-                      <h3 className="text-sm font-bold text-slate-900">Plan Next Adventure</h3>
-                      <p className="text-slate-400 text-[10px]">Create new memories</p>
+
+                      <button
+                        onClick={() => navigate("/hotels")}
+                        className="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs flex items-center gap-1.5 shadow-md transition shrink-0"
+                      >
+                        Explore All 64 Districts
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
                     </div>
-                  </>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                      {curatedEscapes.map((esc) => (
+                        <div
+                          key={esc.id}
+                          onClick={() => navigate(esc.link)}
+                          className="group rounded-2xl border border-slate-200/90 overflow-hidden bg-slate-50 hover:bg-white hover:shadow-lg transition-all duration-300 cursor-pointer flex flex-col"
+                        >
+                          <div className="relative aspect-[16/10] overflow-hidden">
+                            <img
+                              src={esc.image}
+                              alt={esc.name}
+                              className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                            />
+                            <span className="absolute top-2.5 left-2.5 bg-slate-900/80 backdrop-blur-md text-white text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider">
+                              {esc.tag}
+                            </span>
+                            <span className="absolute bottom-2.5 right-2.5 bg-emerald-500 text-slate-950 text-[10px] font-black px-2 py-0.5 rounded-md uppercase">
+                              15% Off VIP
+                            </span>
+                          </div>
+
+                          <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
+                            <div>
+                              <div className="flex items-center gap-1 text-[11px] text-amber-500 font-bold mb-1">
+                                ⭐ {esc.rating} <span className="text-slate-400">({esc.reviews} reviews)</span>
+                              </div>
+                              <h4 className="font-black text-slate-900 text-sm group-hover:text-emerald-700 transition leading-snug">
+                                {esc.name}
+                              </h4>
+                              <p className="text-xs text-slate-500 flex items-center gap-1 mt-1">
+                                <MapPin className="w-3 h-3 text-rose-500" /> {esc.city}
+                              </p>
+                            </div>
+
+                            <div className="border-t border-slate-200/60 pt-3 flex items-center justify-between">
+                              <div>
+                                <span className="text-[10px] text-slate-400 line-through">BDT {esc.originalPrice}</span>
+                                <p className="text-sm font-black text-slate-900">
+                                  BDT {esc.price} <span className="text-[10px] font-normal text-slate-500">/night</span>
+                                </p>
+                              </div>
+                              <button className="px-3 py-1.5 rounded-lg bg-slate-900 text-white font-bold text-xs group-hover:bg-emerald-600 transition">
+                                Book
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 )}
               </div>
-            </section>
+            )}
 
-            {/* ── UPCOMING STAYS ── */}
-            <section className="space-y-4">
-              <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2 uppercase tracking-wide">
-                <Calendar className="w-4 h-4 text-indigo-600" /> Upcoming Stays
-              </h2>
-
-              <div className="flex flex-col md:flex-row gap-6">
-                {/* Mini Calendar */}
-                <div className="w-full md:w-72 bg-[#F8FAFF] border border-blue-50 rounded-2xl p-5 shadow-sm">
-                  <div className="flex justify-between items-center mb-4">
-                    <span className="text-xs font-bold text-slate-900 tracking-wider">{currentMonth}</span>
-                    <div className="flex gap-2">
-                      <ChevronLeft className="w-3.5 h-3.5 text-slate-400 cursor-pointer hover:text-indigo-600 transition" />
-                      <ChevronRight className="w-3.5 h-3.5 text-slate-400 cursor-pointer hover:text-indigo-600 transition" />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-7 gap-1.5 text-center text-[9px] font-bold text-slate-400 mb-1.5">
-                    {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(d => <span key={d}>{d}</span>)}
-                  </div>
-                  <div className="grid grid-cols-7 gap-1">
-                    {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(d => {
-                      const isStay = bookingDays.includes(d);
-                      const isToday = d === now.getDate();
-                      return (
-                        <div key={d} className={`aspect-square flex items-center justify-center text-[10px] rounded-full cursor-pointer transition
-                          ${isStay ? "bg-indigo-600 text-white font-bold" : isToday ? "bg-slate-100 text-slate-900 border border-slate-200" : "text-slate-600 hover:bg-white hover:shadow-sm"}`}>
-                          {d}
+            {/* TAB CONTENT: PAST JOURNEYS */}
+            {activeTab === "past" && (
+              <div className="space-y-4">
+                {past.length > 0 ? (
+                  past.map((b) => (
+                    <div
+                      key={b.id}
+                      className="bg-white rounded-2xl p-5 border border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center shrink-0">
+                          <CheckCircle className="w-6 h-6 text-emerald-600" />
                         </div>
-                      )
-                    })}
-                  </div>
-                </div>
-
-                {/* Booking Preview */}
-                <div className="flex-1 bg-blue-50/30 border border-blue-100 rounded-2xl flex flex-col items-center justify-center p-6 text-center">
-                  {upcoming.length === 0 ? (
-                    <>
-                      <p className="text-slate-900 font-bold mb-2">No bookings scheduled</p>
-                      <button onClick={() => navigate("/hotels")} className="text-indigo-600 font-bold text-xs flex items-center gap-1 hover:underline decoration-2">
-                        Discover Destinations <ChevronRight className="w-3 h-3" />
-                      </button>
-                    </>
-                  ) : (
-                    <div className="w-full text-left space-y-3">
-                      <div className="flex justify-between items-start">
                         <div>
-                          <h4 className="font-bold text-slate-900 text-base">{hotels[upcoming[0].hotelId]?.name || upcoming[0].hotelName}</h4>
-                          <p className="text-slate-400 text-xs font-medium uppercase tracking-tight">{upcoming[0].roomType}</p>
-                        </div>
-                        <span className="bg-white px-2 py-0.5 rounded-md text-[9px] font-bold text-indigo-600 border border-blue-100 shadow-sm uppercase tracking-widest">Confirmed</span>
-                      </div>
-                      <div className="flex items-center gap-4 text-xs text-slate-600">
-                        <div className="flex flex-col">
-                          <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Check In</span>
-                          <span className="font-bold text-slate-800">{upcoming[0].checkIn}</span>
-                        </div>
-                        <ChevronRight className="w-3 h-3 text-slate-300" />
-                        <div className="flex flex-col">
-                          <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Check Out</span>
-                          <span className="font-bold text-slate-800">{upcoming[0].checkOut}</span>
+                          <h4 className="font-black text-slate-900 text-base">{b.hotelName}</h4>
+                          <p className="text-xs text-slate-500">{b.roomType} • {b.checkIn} to {b.checkOut}</p>
+                          <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md mt-1 inline-block">
+                            Completed Journey
+                          </span>
                         </div>
                       </div>
-                      <button onClick={() => navigate(`/property/${upcoming[0].hotelId}`)} className="w-full bg-white text-indigo-600 font-bold text-xs py-2.5 rounded-xl border border-indigo-50 shadow-sm hover:shadow-md transition">
-                        Manage Booking
-                      </button>
+
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={() => navigate(`/property/${b.hotelId}`)}
+                          className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition"
+                        >
+                          Book Again
+                        </button>
+                      </div>
                     </div>
-                  )}
-                </div>
+                  ))
+                ) : (
+                  <div className="bg-white rounded-3xl p-8 border border-slate-200 text-center space-y-3">
+                    <Compass className="w-12 h-12 text-slate-300 mx-auto" />
+                    <h3 className="text-lg font-bold text-slate-900">No Past Journeys Yet</h3>
+                    <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                      Your completed trips will appear here with downloadable invoices, loyalty certificates, and re-booking perks.
+                    </p>
+                    <button
+                      onClick={() => navigate("/hotels")}
+                      className="px-5 py-2.5 rounded-xl bg-slate-900 text-white font-bold text-xs"
+                    >
+                      Explore Stays
+                    </button>
+                  </div>
+                )}
               </div>
-            </section>
+            )}
 
-            {/* ── ASSISTANCE BANNER ── */}
-            <section className="bg-slate-900 rounded-[32px] p-8 relative overflow-hidden text-white group">
-              <div className="relative z-10 max-w-md space-y-3">
-                <h2 className="text-2xl font-bold tracking-tight">Need Assistance?</h2>
-                <p className="text-slate-400 text-sm leading-relaxed">
-                  Our dedicated concierge and support teams are available 24/7 to ensure your travels are seamless.
+            {/* TAB CONTENT: WISHLIST */}
+            {activeTab === "wishlist" && (
+              <div className="bg-white rounded-3xl p-8 border border-slate-200 text-center space-y-3">
+                <Heart className="w-12 h-12 text-rose-400 mx-auto" />
+                <h3 className="text-lg font-bold text-slate-900">Your Saved Properties</h3>
+                <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                  Click the heart icon on any hotel card while browsing to save it here for quick access later.
                 </p>
-                <div className="flex flex-wrap gap-3 pt-2">
-                  <button onClick={() => navigate("/help")} className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm px-6 py-2.5 rounded-xl transition shadow-lg shadow-indigo-900/40">
-                    Support Center
-                  </button>
-                  <button className="bg-white/5 hover:bg-white/10 backdrop-blur-md text-white font-bold text-sm px-6 py-2.5 rounded-xl border border-white/10 transition">
-                    Submit Feedback
-                  </button>
-                </div>
+                <button
+                  onClick={() => navigate("/hotels")}
+                  className="px-5 py-2.5 rounded-xl bg-slate-900 text-white font-bold text-xs"
+                >
+                  Browse Hotels
+                </button>
               </div>
-              <div className="absolute -top-10 -right-10 opacity-5 group-hover:opacity-10 transition duration-1000">
-                <LifeBuoy className="w-64 h-64 rotate-12" />
-              </div>
-            </section>
+            )}
 
-            {/* ── EXTRA SERVICES ── */}
+            {/* ── EXTRA HOTEL SERVICES CATALOG (If active stay exists) ── */}
             {activeHotelBooking && (
-              <section className="bg-white border border-slate-50 rounded-[32px] p-6 space-y-4">
+              <section className="bg-white border border-slate-200 rounded-3xl p-6 space-y-4 shadow-sm">
                 <ExtraServices
                   hotelId={activeHotelBooking.hotelId}
                   hotelName={hotels[activeHotelBooking.hotelId]?.name || activeHotelBooking.hotelName}
-                  userId={mongoUser.id}
+                  userId={mongoUser?.id}
                   bookings={activeHotelBookings}
                 />
               </section>
             )}
-          </div>
 
-          <div className="space-y-8">
-            {/* ── ALERTS ── */}
-            <div className="bg-white border border-slate-50 rounded-3xl p-6 shadow-sm space-y-5">
-              <div className="flex justify-between items-center">
-                <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Alerts</h3>
-                <span className="text-[9px] font-bold text-indigo-600 bg-blue-50 px-2 py-0.5 rounded text-center uppercase tracking-tighter">2 new</span>
-              </div>
-              <div className="space-y-4">
-                <div className="flex gap-3.5 items-start">
-                  <div className="w-9 h-9 bg-yellow-50 rounded-xl flex items-center justify-center shrink-0">
-                    <Star className="w-4.5 h-4.5 text-yellow-600 fill-yellow-600" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-xs font-bold text-slate-800">Points Expiring</p>
-                    <p className="text-[11px] text-slate-500">500 bonus points expire in 2 days</p>
-                  </div>
+            {/* ── FEEDBACK & REVIEW PAST STAY SECTION ── */}
+            <section className="bg-white border border-slate-200 rounded-3xl p-6 md:p-8 space-y-4 shadow-sm">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-black text-slate-900">Rate & Review Your Experience</h3>
+                  <p className="text-xs text-slate-500">Your feedback helps fellow travelers and elevates hospitality standards across Bangladesh.</p>
                 </div>
-                <div className="flex gap-3.5 items-start">
-                  <div className="w-9 h-9 bg-blue-50 rounded-xl flex items-center justify-center shrink-0">
-                    <MessageSquare className="w-4.5 h-4.5 text-indigo-600" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-xs font-bold text-slate-800">Review Stay</p>
-                    <p className="text-[11px] text-slate-500">How was your stay at Eco Suite?</p>
-                  </div>
+                <div className="flex gap-1 text-amber-400">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      onClick={() => setRating(star)}
+                      onMouseEnter={() => setHoverStar(star)}
+                      onMouseLeave={() => setHoverStar(0)}
+                      className="p-1 transition hover:scale-125"
+                    >
+                      <Star
+                        className={`w-5 h-5 ${
+                          (hoverStar || rating) >= star ? "fill-amber-400 text-amber-400" : "text-slate-300"
+                        }`}
+                      />
+                    </button>
+                  ))}
                 </div>
               </div>
-            </div>
 
-            {/* ── ENHANCE YOUR STAY ── */}
-            <div className="bg-white border border-slate-50 rounded-3xl p-3.5 shadow-sm group cursor-pointer overflow-hidden">
-              <div className="flex items-center gap-2 mb-3 px-1">
-                <LayoutGrid className="w-3.5 h-3.5 text-indigo-600" />
-                <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Enhance Your Stay</h3>
-              </div>
-              <div className="relative aspect-[16/8] rounded-2xl overflow-hidden mb-3">
-                <img
-                  src="https://images.unsplash.com/photo-1544161515-4ab6ce6db874"
-                  alt="Spa"
-                  className="w-full h-full object-cover group-hover:scale-105 transition duration-700"
+              <div className="relative">
+                <textarea
+                  rows={3}
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  placeholder="Share details of your room cleanliness, staff friendliness, view, and food quality..."
+                  className="w-full rounded-2xl border border-slate-200 p-4 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
                 />
-                <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                  <span className="text-white text-xs font-bold tracking-wider uppercase">Spa & Wellness</span>
+              </div>
+
+              <div className="flex justify-between items-center">
+                <span className="text-[11px] text-slate-400">Minimum 10 characters</span>
+                <button
+                  disabled={submitting || !comment.trim()}
+                  onClick={handleSubmitReview}
+                  className="px-6 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white font-bold text-xs flex items-center gap-2 transition"
+                >
+                  {submitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                  Submit Review
+                </button>
+              </div>
+
+              {submitted && (
+                <p className="text-xs text-emerald-600 font-bold bg-emerald-50 p-2.5 rounded-xl border border-emerald-200">
+                  ✔ Thank you! Your review was successfully recorded.
+                </p>
+              )}
+            </section>
+          </div>
+
+          {/* ── RIGHT COLUMN (4 SPANS): CALENDAR, COUPONS & ASSISTANCE ── */}
+          <div className="lg:col-span-4 space-y-6">
+            {/* Interactive Upcoming Calendar */}
+            <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-4">
+              <div className="flex justify-between items-center">
+                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                  Trip Calendar
+                </h3>
+                <span className="text-xs font-black text-slate-900">{currentMonth}</span>
+              </div>
+
+              <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-bold text-slate-400 mb-1">
+                {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
+                  <span key={i}>{d}</span>
+                ))}
+              </div>
+
+              <div className="grid grid-cols-7 gap-1">
+                {Array.from({ length: daysInMonth }, (_, i) => i + 1).map((d) => {
+                  const isStay = bookingDays.includes(d);
+                  const isToday = d === now.getDate();
+                  return (
+                    <div
+                      key={d}
+                      className={`aspect-square flex items-center justify-center text-[10px] rounded-xl transition ${
+                        isStay
+                          ? "bg-emerald-600 text-white font-black shadow-sm"
+                          : isToday
+                          ? "bg-slate-900 text-white font-bold"
+                          : "text-slate-600 hover:bg-slate-100"
+                      }`}
+                    >
+                      {d}
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="flex items-center justify-between text-[10px] text-slate-500 pt-2 border-t border-slate-100">
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-slate-900" /> Today
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-600" /> Stay Dates
+                </span>
+              </div>
+            </div>
+
+            {/* Travel Wallet Vouchers & Promo Coupons (Agoda / GoZayaan Style) */}
+            <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+                  <Ticket className="w-3.5 h-3.5 text-rose-500" /> Promo Coupons
+                </h3>
+                <span className="text-[10px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full">
+                  3 Active
+                </span>
+              </div>
+
+              <div className="space-y-3">
+                {/* Coupon 1 */}
+                <div className="p-3.5 rounded-2xl bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200/80 flex items-center justify-between gap-3">
+                  <div>
+                    <span className="text-xs font-black text-emerald-950 block">EID FESTIVAL SPECIAL</span>
+                    <span className="text-[11px] text-emerald-700">25% OFF on luxury resorts</span>
+                  </div>
+                  <button
+                    onClick={() => copyCoupon("EID25")}
+                    className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-black uppercase tracking-wider shrink-0 transition"
+                  >
+                    {copiedCode === "EID25" ? "COPIED!" : "EID25"}
+                  </button>
+                </div>
+
+                {/* Coupon 2 */}
+                <div className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/80 flex items-center justify-between gap-3">
+                  <div>
+                    <span className="text-xs font-black text-amber-950 block">INSTANT CASHBACK</span>
+                    <span className="text-[11px] text-amber-700">৳ 500 OFF next booking</span>
+                  </div>
+                  <button
+                    onClick={() => copyCoupon("STAYBD500")}
+                    className="px-2.5 py-1 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-[10px] font-black uppercase tracking-wider shrink-0 transition"
+                  >
+                    {copiedCode === "STAYBD500" ? "COPIED!" : "STAYBD500"}
+                  </button>
+                </div>
+
+                {/* Coupon 3 */}
+                <div className="p-3.5 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200/80 flex items-center justify-between gap-3">
+                  <div>
+                    <span className="text-xs font-black text-blue-950 block">BEACH ESCAPE DEAL</span>
+                    <span className="text-[11px] text-blue-700">15% OFF Cox's Bazar & Kuakata</span>
+                  </div>
+                  <button
+                    onClick={() => copyCoupon("BEACH15")}
+                    className="px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-black uppercase tracking-wider shrink-0 transition"
+                  >
+                    {copiedCode === "BEACH15" ? "COPIED!" : "BEACH15"}
+                  </button>
                 </div>
               </div>
-              <button className="w-full py-2 text-[10px] font-bold text-indigo-600 hover:bg-slate-50 rounded-xl transition uppercase tracking-widest border border-transparent hover:border-indigo-100">
-                Explore All Services
-              </button>
             </div>
 
-            {/* ── SUPPORT & FEEDBACK ── */}
-            <div className="bg-slate-50 border border-slate-100 rounded-3xl p-6 space-y-3">
-              <h3 className="text-sm font-bold text-slate-900">Support & Feedback</h3>
-              <p className="text-[11px] text-slate-500 leading-relaxed font-medium">
-                Report an issue or leave a review for past stays to help us improve your experience.
-              </p>
-              <button onClick={() => navigate("/help")} className="text-[10px] font-bold text-indigo-600 flex items-center gap-1.5 uppercase tracking-widest hover:underline underline-offset-4">
-                Go to support center <ChevronRight className="w-3 h-3" />
-              </button>
+            {/* Need Assistance & 24/7 Concierge Banner */}
+            <div className="bg-gradient-to-br from-slate-900 to-indigo-950 text-white rounded-3xl p-6 shadow-md space-y-4 relative overflow-hidden">
+              <div className="relative z-10 space-y-2">
+                <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-emerald-400 bg-emerald-500/20 px-2.5 py-1 rounded-full">
+                  <Headphones className="w-3 h-3" /> VIP Concierge
+                </span>
+                <h4 className="text-lg font-black text-white">Need Assistance?</h4>
+                <p className="text-slate-300 text-xs leading-relaxed">
+                  Our dedicated concierge team is available 24/7 across Bangladesh to arrange airport transfers, room upgrades, or answer travel questions.
+                </p>
+                <div className="pt-2 flex flex-wrap gap-2.5">
+                  <button
+                    onClick={() => navigate("/help")}
+                    className="flex-1 py-2.5 px-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs text-center transition"
+                  >
+                    Support Center
+                  </button>
+                  <button
+                    onClick={() => navigate("/national-initiative")}
+                    className="flex-1 py-2.5 px-3 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs text-center border border-white/20 transition"
+                  >
+                    Govt Initiative
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
-
         </div>
-
-        {/* ── FOOTER ── */}
-        <div className="pt-10">
-          <Footer />
-        </div>
-
       </main>
-    </div>
-  );
-}
 
-// ── Sub-components ──
-
-function StatCard({ label, value, color }: { label: string; value: string | number; color: string }) {
-  const colors: Record<string, string> = { indigo: "border-indigo-400", blue: "border-blue-400", green: "border-green-400", gray: "border-gray-300" };
-  return (
-    <div className={`bg-white rounded-xl shadow p-5 border-l-4 ${colors[color]}`}>
-      <p className="text-xs text-gray-500 font-medium">{label}</p>
-      <p className="text-2xl font-bold text-gray-800 mt-1">{value}</p>
-    </div>
-  );
-}
-
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="bg-white rounded-2xl shadow p-6">
-      <h2 className="text-lg font-bold text-gray-800 mb-5">{title}</h2>
-      {children}
-    </div>
-  );
-}
-
-function EmptyState({ message, cta, onCta }: { message: string; cta?: string; onCta?: () => void }) {
-  return (
-    <div className="text-center py-10 text-gray-400">
-      <p className="mb-2">{message}</p>
-      {cta && onCta && (
-        <button onClick={onCta} className="text-indigo-600 underline text-sm">{cta}</button>
-      )}
-    </div>
-  );
-}
-
-function BookingList({ bookings }: { bookings: Booking[] }) {
-  return (
-    <div className="space-y-3">
-      {bookings.map(b => (
-        <div key={b.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border hover:shadow-sm transition">
-          <div className="flex items-center gap-4">
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${b.paymentMethod === "bkash" ? "bg-pink-100" : "bg-indigo-100"}`}>
-              <CreditCard className={`w-5 h-5 ${b.paymentMethod === "bkash" ? "text-pink-600" : "text-indigo-600"}`} />
-            </div>
-            <div>
-              <p className="font-semibold text-gray-800">{b.hotelName}</p>
-              <p className="text-xs text-gray-500">{b.roomType}</p>
-              <p className="text-xs text-gray-400 flex items-center gap-1 mt-0.5">
-                <Calendar className="w-3 h-3" /> {b.checkIn} → {b.checkOut} ({b.nights} nights)
-              </p>
-            </div>
-          </div>
-          <div className="text-right">
-            <p className="font-bold text-green-600 text-lg">৳{b.totalPrice}</p>
-            <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${b.status === "CONFIRMED" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-600"}`}>
-              {b.status}
-            </span>
-            <p className="text-xs text-gray-400 mt-0.5">via {b.paymentMethod ?? "–"}</p>
-          </div>
-        </div>
-      ))}
+      <Footer />
     </div>
   );
 }
