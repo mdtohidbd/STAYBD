@@ -1,5 +1,5 @@
 > **BrainSync Context Pumper** 🧠
-> Dynamically loaded for active file: `backend\.env` (Domain: **Config/Infrastructure**)
+> Dynamically loaded for active file: `frontend\.env` (Domain: **Config/Infrastructure**)
 
 ### 🔴 Config/Infrastructure Gotchas
 - **Low cohesion detected in Domain Cluster 1**: Cluster 1 (13 nodes) has a very low cohesion score (0.08). This suggests the community is a "spaghetti" module containing unrelated logic that should be separated into cleaner domain boundaries.
