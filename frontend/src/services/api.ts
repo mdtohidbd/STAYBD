@@ -5,7 +5,12 @@
  * ╚══════════════════════════════════════════════════════════════╝
  */
 
-const API_BASE = import.meta.env.VITE_API_URL || '/api';
+const DEFAULT_API_BASE = 'https://staybd-backend.vercel.app/api';
+const API_BASE = (import.meta.env.VITE_API_URL && import.meta.env.VITE_API_URL.trim() !== '')
+  ? import.meta.env.VITE_API_URL.replace(/\/+$/, '')
+  : (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+      ? '/api'
+      : DEFAULT_API_BASE);
 
 // ──────────────────────── TYPES ────────────────────────
 export type UserRole = "ADMIN" | "OWNER" | "USER";
@@ -405,7 +410,8 @@ class ValidationError extends Error {
 }
 
 async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
-  const url = `${API_BASE}${path}`;
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  const url = `${API_BASE}${normalizedPath}`;
   
   // Try to get token from localStorage
   const adminToken = localStorage.getItem('adminToken');
@@ -425,11 +431,23 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
     ...options,
     headers,
   });
-  if (!res.ok) {
-    const errData = await res.json().catch(() => ({ message: res.statusText }));
-    throw new Error(errData.message || `API error ${res.status}`);
+
+  const text = await res.text();
+  let json: any = null;
+  if (text) {
+    try {
+      json = JSON.parse(text);
+    } catch {
+      // not JSON
+    }
   }
-  return res.json();
+
+  if (!res.ok) {
+    const errorMsg = json?.message || (text && text.length < 200 && !text.includes('<!DOCTYPE') ? text : `API error ${res.status}: ${res.statusText}`);
+    throw new Error(errorMsg);
+  }
+
+  return (json !== null ? json : text) as T;
 }
 
 // Normalize MongoDB _id → id for any object
@@ -618,6 +636,22 @@ export function removeLocalRoom(roomId: string): void {
 // ──────────────────────── API ────────────────────────
 
 export const api = {
+
+  // ╔══════════════ AUTH SECTION ══════════════╗
+
+  adminLogin: async (email: string, password: string): Promise<{ _id: string; name: string; email: string; role: string; token: string }> => {
+    return apiFetch<{ _id: string; name: string; email: string; role: string; token: string }>('/auth/admin/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    });
+  },
+
+  ownerLogin: async (email: string, password: string): Promise<{ _id: string; name: string; email: string; role: string; token: string }> => {
+    return apiFetch<{ _id: string; name: string; email: string; role: string; token: string }>('/auth/owner/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    });
+  },
 
   // ╔══════════════ USER SECTION ══════════════╗
 

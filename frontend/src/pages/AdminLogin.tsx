@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Shield, Eye, EyeOff, Lock, Mail, ArrowLeft, Loader2, Sparkles } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { api } from '@/services/api';
 
 export default function AdminLogin() {
     const [email, setEmail] = useState('');
@@ -15,13 +16,7 @@ export default function AdminLogin() {
         e.preventDefault();
         setLoading(true);
         try {
-            const res = await fetch('/api/auth/admin/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password }),
-            });
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.message || 'Login failed');
+            const data = await api.adminLogin(email, password);
 
             // Save token and info
             localStorage.setItem('adminToken', data.token);
@@ -30,7 +25,7 @@ export default function AdminLogin() {
             toast({ title: 'Success', description: 'Welcome to Super Admin Dashboard' });
             navigate('/admin');
         } catch (err: any) {
-            toast({ variant: 'destructive', title: 'Error', description: err.message });
+            toast({ variant: 'destructive', title: 'Error', description: err.message || 'Login failed' });
         } finally {
             setLoading(false);
         }

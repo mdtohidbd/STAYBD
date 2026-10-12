@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { api } from '@/services/api';
 
 export default function OwnerLogin() {
     const [email, setEmail] = useState('');
@@ -16,13 +17,7 @@ export default function OwnerLogin() {
         e.preventDefault();
         setLoading(true);
         try {
-            const res = await fetch('/api/auth/owner/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password }),
-            });
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.message || 'Login failed');
+            const data = await api.ownerLogin(email, password);
 
             // Save token and info
             localStorage.setItem('ownerToken', data.token);
@@ -31,7 +26,7 @@ export default function OwnerLogin() {
             toast({ title: 'Success', description: 'Logged in successfully' });
             navigate('/owner');
         } catch (err: any) {
-            toast({ variant: 'destructive', title: 'Error', description: err.message });
+            toast({ variant: 'destructive', title: 'Error', description: err.message || 'Login failed' });
         } finally {
             setLoading(false);
         }
