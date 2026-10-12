@@ -51,7 +51,7 @@ app.use('/api/complaints',    require('./routes/complaintRoutes'));
 app.use('/api/admin',         require('./routes/adminRoutes'));
 
 // ── Health check & Root status ──
-app.get('/', (req, res) => {
+const sendApiInfo = (req, res) => {
   res.json({
     status: 'ok',
     message: '🚀 Stay Buddy API is running live on Vercel!',
@@ -60,12 +60,16 @@ app.get('/', (req, res) => {
       health: '/api/health',
       hotels: '/api/hotels',
       rooms: '/api/rooms',
+      experiences: '/api/experiences',
       auth: '/api/auth'
     }
   });
-});
+};
 
+app.get('/', sendApiInfo);
+app.get('/api', sendApiInfo);
 app.get('/api/health', (req, res) => res.json({ status: 'ok', time: new Date().toISOString() }));
+
 
 
 // ── Global error handler ──
