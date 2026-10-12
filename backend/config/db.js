@@ -8,33 +8,41 @@ try {
   // Ignore if custom DNS cannot be set
 }
 
-let isConnecting = false;
+let cachedPromise = null;
 
 const connectDB = async () => {
-  if (isConnecting || mongoose.connection.readyState === 1) return;
-  isConnecting = true;
+  if (mongoose.connection.readyState === 1) {
+    return mongoose.connection;
+  }
 
-  try {
-    const conn = await mongoose.connect(process.env.MONGODB_URI, {
+  if (!process.env.MONGODB_URI) {
+    console.warn('⚠️ MONGODB_URI environment variable is missing. Database connection skipped.');
+    return null;
+  }
+
+  if (!cachedPromise) {
+    cachedPromise = mongoose.connect(process.env.MONGODB_URI, {
+
       serverSelectionTimeoutMS: 5000,
       connectTimeoutMS: 10000,
       socketTimeoutMS: 45000,
       maxPoolSize: 10,
+    }).then((conn) => {
+      console.log(`✅ MongoDB connected: ${conn.connection.host}`);
+      return conn;
+    }).catch((error) => {
+      cachedPromise = null;
+      console.error(`❌ MongoDB connection error: ${error.message}`);
+      throw error;
     });
-    console.log(`✅ MongoDB connected: ${conn.connection.host}`);
-    isConnecting = false;
-    return conn;
-  } catch (error) {
-    console.error(`❌ MongoDB connection error: ${error.message}`);
-    isConnecting = false;
-    // Auto-retry connection after 4 seconds instead of killing process
-    setTimeout(connectDB, 4000);
   }
+
+  return cachedPromise;
 };
 
 mongoose.connection.on('disconnected', () => {
-  console.warn('⚠️ MongoDB disconnected. Retrying in 3 seconds...');
-  setTimeout(connectDB, 3000);
+  console.warn('⚠️ MongoDB disconnected.');
+  cachedPromise = null;
 });
 
 mongoose.connection.on('error', (err) => {
@@ -42,3 +50,4 @@ mongoose.connection.on('error', (err) => {
 });
 
 module.exports = connectDB;
+

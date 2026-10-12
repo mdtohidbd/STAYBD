@@ -1,5 +1,8 @@
+const path = require('path');
 require('dotenv').config();
+require('dotenv').config({ path: path.join(__dirname, '.env') });
 const express = require('express');
+
 const cors = require('cors');
 const morgan = require('morgan');
 const connectDB = require('./config/db');
@@ -15,18 +18,23 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 if (process.env.NODE_ENV !== 'production') app.use(morgan('dev'));
 
-// ── Check DB readiness for API routes (except health check) ──
-app.use('/api', (req, res, next) => {
+// ── Ensure DB readiness for API routes (except health check) ──
+app.use('/api', async (req, res, next) => {
   if (req.path === '/health') return next();
-  const mongoose = require('mongoose');
-  if (mongoose.connection.readyState !== 1) {
+  try {
+    const mongoose = require('mongoose');
+    if (mongoose.connection.readyState !== 1) {
+      await connectDB();
+    }
+    next();
+  } catch (err) {
     return res.status(503).json({
       success: false,
-      message: 'Database is connecting, please retry in a few seconds.',
+      message: 'Database is connecting or temporarily unavailable: ' + (err.message || 'Please retry in a moment.'),
     });
   }
-  next();
 });
+
 
 // ── Routes ──
 app.use('/api/auth',          require('./routes/authRoutes'));
@@ -55,7 +63,7 @@ app.use((err, req, res, _next) => {
 });
 
 // ── Start ──
-if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+if (!process.env.VERCEL) {
   const PORT = process.env.PORT || 5000;
   app.listen(PORT, () => {
     console.log(`🚀 Stay Buddy API running on port ${PORT}`);
