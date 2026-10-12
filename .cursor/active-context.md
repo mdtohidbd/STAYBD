@@ -1,23 +1,27 @@
 > **BrainSync Context Pumper** 🧠
-> Dynamically loaded for active file: `src\pages\admin\panels\ComplaintsPanel.tsx` (Domain: **Frontend (React/UI)**)
+> Dynamically loaded for active file: `src\pages\CheckoutPage.tsx` (Domain: **Frontend (React/UI)**)
 
 ### 📐 Frontend (React/UI) Conventions & Fixes
-- **[what-changed] 🟢 Edited src/pages/admin/components/BookingDetailModal.tsx (25 changes, 231min)**: Active editing session on src/pages/admin/components/BookingDetailModal.tsx.
-25 content changes over 231 minutes.
-- **[what-changed] 🟢 Edited src/components/ExperiencesAISection.tsx (40 changes, 236min)**: Active editing session on src/components/ExperiencesAISection.tsx.
-40 content changes over 236 minutes.
+- **[what-changed] 🟢 Edited src/pages/CheckoutPage.tsx (28 changes, 121min)**: Active editing session on src/pages/CheckoutPage.tsx.
+28 content changes over 121 minutes.
 - **[what-changed] 🟢 Edited src/pages/BecomeAHost.tsx (21 changes, 104min)**: Active editing session on src/pages/BecomeAHost.tsx.
 21 content changes over 104 minutes.
 - **[what-changed] 🟢 Edited src/pages/PropertyDetails.tsx (13 changes, 90min)**: Active editing session on src/pages/PropertyDetails.tsx.
 13 content changes over 90 minutes.
 - **[what-changed] 🟢 Edited src/pages/PropertyDetails.tsx (19 changes, 31min)**: Active editing session on src/pages/PropertyDetails.tsx.
 19 content changes over 31 minutes.
+- **[what-changed] 🟢 Edited src/pages/NationalProposal.tsx (11 changes, 183min)**: Active editing session on src/pages/NationalProposal.tsx.
+11 content changes over 183 minutes.
+- **[what-changed] 🟢 Edited src/pages/admin/panels/ComplaintsPanel.tsx (20 changes, 145min)**: Active editing session on src/pages/admin/panels/ComplaintsPanel.tsx.
+20 content changes over 145 minutes.
+- **[what-changed] 🟢 Edited src/pages/admin/components/BookingDetailModal.tsx (25 changes, 231min)**: Active editing session on src/pages/admin/components/BookingDetailModal.tsx.
+25 content changes over 231 minutes.
+- **[what-changed] 🟢 Edited src/components/ExperiencesAISection.tsx (40 changes, 236min)**: Active editing session on src/components/ExperiencesAISection.tsx.
+40 content changes over 236 minutes.
 - **[what-changed] 🟢 Edited src/components/SpotHotelsModal.tsx (10 changes, 86min)**: Active editing session on src/components/SpotHotelsModal.tsx.
 10 content changes over 86 minutes.
 - **[what-changed] 🟢 Edited src/components/TouristSpotToBooking.tsx (9 changes, 71min)**: Active editing session on src/components/TouristSpotToBooking.tsx.
 9 content changes over 71 minutes.
-- **[what-changed] 🟢 Edited src/pages/NationalProposal.tsx (11 changes, 183min)**: Active editing session on src/pages/NationalProposal.tsx.
-11 content changes over 183 minutes.
 - **[decision] Optimized Sparkles — fixes memory leak from uncleared timers**: -   Building2, Sparkles, Compass, Key, Star, ShieldCheck, 
 +   Building2, Sparkles, Compass, Zap, Waves
 -   Zap, Award, MapPin, CheckCircle2, HeartHandshake, Waves
@@ -88,60 +92,3 @@
 … [diff truncated]
 
 📌 IDE AST Context: Modified symbols likely include [StayBuddyLoaderProps, STEPS, StayBuddyLoader, default]
-- **[problem-fix] problem-fix in Index.tsx**: -                     }
-+                         setLoading(false);
--                 })
-+                     }
--                 .catch((err) => {
-+                 });
--                     console.error("Failed to load initial data:", err);
-+         };
--                 })
-+         loadData();
--                 .finally(() => {
-+         return () => { alive = false; };
--                     if (alive) setLoading(false);
-+     }, []);
--                 });
-+ 
--         };
-+     if (loading) return (
--         loadData();
-+         <div className="min-h-screen bg-background flex flex-col items-center justify-center">
--         return () => { alive = false; };
-+             <Loader2 className="w-12 h-12 animate-spin text-[#FF385C] mb-4" />
--     }, []);
-+             <p className="text-slate-500 font-medium">Loading amazing stays...</p>
-- 
-+         </div>
--     if (loading) return (
-+     );
--         <div className="min-h-screen bg-background flex flex-col items-center justify-center">
-+ 
--             <Loader2 className="w-12 h-12 animate-spin text-[#FF385C] mb-4" />
-+     return (
--             <p className="text-slate-500 font-medium">Loading amazing stays...</p>
-+         <div className="min-h-screen bg-[#FAFAFA]">
--         </div>
-+             <Header />
--     );
-+ 
-- 
-+             {/* ═══════════ HERO SECTION ═══════════ */}
--     return (
-+             <section className="hero-section relative">
--         <div className="min-h-screen bg-[#FAFAFA]">
-+                 {/* Background image with overlay */}
--             <Header />
-+                 <div className="absolute inset-0">
-- 
-+                     <img
--             {/* ═══════════ HERO SECTION ═══════════ */}
-+                         src={heroImg}
--             <section className="hero-section relative">
-+                         alt="Hero"
--                 {/* Background image with overlay */}
-+                         className="w-full 
-… [diff truncated]
-
-📌 IDE AST Context: Modified symbols likely include [Index, default]
