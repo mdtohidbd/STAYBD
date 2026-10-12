@@ -16,6 +16,7 @@ import CuratedStayCollections from "@/components/CuratedStayCollections";
 import StayBDPerksGuarantee from "@/components/StayBDPerksGuarantee";
 import LiveBookingToast from "@/components/LiveBookingToast";
 import GeniusVIPBanner from "@/components/GeniusVIPBanner";
+import FeaturedRoomSuitesSection from "@/components/FeaturedRoomSuitesSection";
 import FloatingConciergeWidget from "@/components/FloatingConciergeWidget";
 import TripBudgetCalculatorModal from "@/components/TripBudgetCalculatorModal";
 
@@ -57,11 +58,21 @@ const Index = () => {
                     if (alive) setLoading(false);
                 });
         };
+        const handleRoomsUpdate = () => {
+            api.getAllRooms().then(r => {
+                if (alive && Array.isArray(r)) setRooms(r);
+            }).catch(() => {});
+        };
+        window.addEventListener('sb_rooms_updated', handleRoomsUpdate);
+        window.addEventListener('storage', handleRoomsUpdate);
+
         loadData();
 
         return () => { 
             alive = false; 
             clearTimeout(maxLoaderTimer);
+            window.removeEventListener('sb_rooms_updated', handleRoomsUpdate);
+            window.removeEventListener('storage', handleRoomsUpdate);
         };
     }, []);
 
@@ -123,6 +134,9 @@ const Index = () => {
                 <div className="max-w-7xl mx-auto px-4 md:px-6">
                     <GeniusVIPBanner />
                 </div>
+
+                {/* ═════ PMS DIRECT PARTNER ROOMS & LUXURY SUITES SHOWCASE ═════ */}
+                <FeaturedRoomSuitesSection rooms={rooms} hotels={hotels} />
 
                 <div className="max-w-7xl mx-auto px-4 md:px-6">
                     <PopularHomes hotels={hotels} rooms={rooms} />

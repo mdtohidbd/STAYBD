@@ -13,6 +13,101 @@ import BookingSuccessVoucher from "../components/BookingSuccessVoucher";
 
 type Step = "SELECT" | "DETAILS" | "SUCCESS";
 
+// Robust fallback resolver for tourist spot hotels or unindexed properties
+function resolveFallbackHotel(hotelId: string): Hotel & { rooms: Room[] } {
+  const normalized = hotelId.replace(/[-_ ]/g, "").toLowerCase();
+
+  for (const list of Object.values(SPOT_HOTELS)) {
+    const spot = list.find(s => 
+      s.id === hotelId || 
+      s.id.toLowerCase() === hotelId.toLowerCase() ||
+      s.id.replace(/[-_ ]/g, "").toLowerCase() === normalized
+    );
+    if (spot) {
+      return {
+        id: spot.id,
+        ownerId: "spot_owner",
+        name: spot.name,
+        city: spot.destinationCity || "Bangladesh",
+        address: spot.distance || "Prime Tourism Hub",
+        description: `${spot.roomType} in ${spot.destinationCity}. Verified direct booking.`,
+        locationLat: 21.4272,
+        locationLng: 92.0058,
+        images: [spot.image, "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=600"],
+        rating: spot.rating || 4.7,
+        totalReviews: spot.reviews || 120,
+        isVerified: true,
+        isRedMarked: false,
+        isActive: true,
+        amenities: spot.features || ["Free Wi-Fi", "Air Conditioning", "24/7 Security"],
+        acceptedPayments: ["Cash", "bKash", "Nagad", "Credit Card"],
+        rooms: [
+          {
+            id: `${spot.id}_r1`,
+            hotelId: spot.id,
+            hotelName: spot.name,
+            type: spot.roomType,
+            pricePerNight: spot.originalPrice || Math.round(spot.price * 1.25),
+            discountPrice: spot.price,
+            totalInventory: spot.availableRooms || 4,
+            availableCount: spot.availableRooms || 4,
+            images: [spot.image],
+            amenities: spot.features || ["Free Wi-Fi", "Attached Bath"],
+            maxAdults: 2,
+            maxChildren: 1,
+            floorNumber: 2,
+            roomNumber: "201",
+            bedType: "Queen / Double Bed",
+            capacity: "2 Adults"
+          } as any
+        ]
+      };
+    }
+  }
+
+  const prettyName = hotelId.replace(/[-_]/g, " ").replace(/\b\w/g, l => l.toUpperCase());
+  const name = prettyName.includes("Hotel") ? prettyName : `${prettyName} Hotel & Resort`;
+  const defaultImg = "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800";
+
+  return {
+    id: hotelId,
+    ownerId: "direct_spot_owner",
+    name,
+    city: "Bangladesh",
+    address: "Prime Tourism District",
+    description: "Verified direct partner accommodation in Bangladesh.",
+    locationLat: 21.4272,
+    locationLng: 92.0058,
+    images: [defaultImg],
+    rating: 4.8,
+    totalReviews: 140,
+    isVerified: true,
+    isRedMarked: false,
+    isActive: true,
+    amenities: ["Free Wi-Fi", "Air Conditioning", "24/7 Security", "Attached Bath"],
+    acceptedPayments: ["Cash", "bKash", "Nagad", "Credit Card"],
+    rooms: [
+      {
+        id: `${hotelId}_r1`,
+        hotelId,
+        hotelName: name,
+        type: "Standard Deluxe Room",
+        pricePerNight: 2500,
+        discountPrice: 1950,
+        totalInventory: 4,
+        availableCount: 4,
+        images: [defaultImg],
+        amenities: ["Free Wi-Fi", "Air Conditioning", "Breakfast"],
+        maxAdults: 2,
+        maxChildren: 1,
+        floorNumber: 2,
+        roomNumber: "201",
+        capacity: "2 Guests"
+      } as any
+    ]
+  };
+}
+
 export default function CheckoutPage() {
   const { hotelId } = useParams<{ hotelId: string }>();
   const navigate = useNavigate();
@@ -92,156 +187,53 @@ export default function CheckoutPage() {
   useEffect(() => {
     if (!hotelId) return;
     const cleanId = decodeURIComponent(hotelId).trim();
-    const normalizedParam = cleanId.replace(/[-_ ]/g, "").toLowerCase();
+    const reqRoomId = searchParams.get("roomId");
+    let isMounted = true;
 
-    api.getHotelById(cleanId).then(h => {
-      if (!h) {
-        for (const spotList of Object.values(SPOT_HOTELS)) {
-          const match = spotList.find(s => 
-            s.id === cleanId || 
-            s.id.toLowerCase() === cleanId.toLowerCase() ||
-            s.id.replace(/[-_ ]/g, "").toLowerCase() === normalizedParam
-          );
-          if (match) {
-            h = {
-              id: match.id,
-              ownerId: "spot_owner",
-              name: match.name,
-              city: match.destinationCity || "Bangladesh",
-              address: match.distance || "Prime Tourism Hub",
-              description: `${match.roomType} in ${match.destinationCity}. Verified direct booking.`,
-              locationLat: 21.4272,
-              locationLng: 92.0058,
-              images: [match.image, "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=600"],
-              rating: match.rating || 4.7,
-              totalReviews: match.reviews || 120,
-              isVerified: true,
-              isRedMarked: false,
-              isActive: true,
-              amenities: match.features || ["Free Wi-Fi", "Air Conditioning", "24/7 Security"],
-              acceptedPayments: ["Cash", "bKash", "Nagad", "Credit Card"],
-              rooms: [
-                {
-                  id: match.id + "_r1",
-                  hotelId: match.id,
-                  hotelName: match.name,
-                  type: match.roomType,
-                  pricePerNight: match.originalPrice || Math.round(match.price * 1.25),
-                  discountPrice: match.price,
-                  totalInventory: match.availableRooms || 4,
-                  availableCount: match.availableRooms || 4,
-                  images: [match.image],
-                  amenities: match.features || ["Free Wi-Fi", "Attached Bath", "24/7 Security"],
-                  maxAdults: 2,
-                  maxChildren: 1,
-                  floorNumber: 2,
-                  roomNumber: "201",
-                  bedType: "Queen / Double Bed",
-                  capacity: "2 Adults"
-                } as any,
-                {
-                  id: match.id + "_r2",
-                  hotelId: match.id,
-                  hotelName: match.name,
-                  type: "Executive Deluxe Ocean/Scenic Suite",
-                  pricePerNight: Math.round(match.price * 1.8),
-                  discountPrice: Math.round(match.price * 1.5),
-                  totalInventory: 3,
-                  availableCount: 3,
-                  images: ["https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=800", match.image],
-                  amenities: ["King Bed", "Private Balcony", "Air Conditioning", "Complimentary Breakfast"],
-                  maxAdults: 3,
-                  maxChildren: 2,
-                  floorNumber: 3,
-                  roomNumber: "305",
-                  bedType: "King Bed",
-                  capacity: "3 Guests"
-                } as any,
-                {
-                  id: match.id + "_r3",
-                  hotelId: match.id,
-                  hotelName: match.name,
-                  type: "Family Deluxe Master Suite",
-                  pricePerNight: Math.round(match.price * 2.6),
-                  discountPrice: Math.round(match.price * 2.1),
-                  totalInventory: 2,
-                  availableCount: 2,
-                  images: ["https://images.unsplash.com/photo-1590490360182-c33d57733427?w=800", match.image],
-                  amenities: ["2 Queen Beds", "Garden/Sea View", "Private Veranda", "24/7 Room Service"],
-                  maxAdults: 4,
-                  maxChildren: 2,
-                  floorNumber: 4,
-                  roomNumber: "402",
-                  bedType: "2 Queen Beds",
-                  capacity: "4 Guests"
-                } as any
-              ]
-            } as any;
-            break;
+    async function loadHotelAndRoom() {
+      setLoading(true);
+      try {
+        let h = await api.getHotelById(cleanId);
+        if (!h) {
+          h = resolveFallbackHotel(cleanId);
+        }
+
+        if (!isMounted) return;
+
+        // Resolve requested room (or fallback to any system room matching the roomId)
+        let activeRoom: Room | null = null;
+        if (reqRoomId) {
+          activeRoom = h.rooms?.find(r => r.id === reqRoomId) || null;
+          if (!activeRoom) {
+            const allRooms = await api.getAllRooms();
+            const matched = allRooms.find(r => r.id === reqRoomId);
+            if (matched) {
+              activeRoom = matched;
+              if (!h.rooms.some(r => r.id === matched.id)) {
+                h.rooms = [matched, ...(h.rooms || [])];
+              }
+            }
           }
         }
-      }
+        if (!activeRoom && h.rooms?.length) {
+          activeRoom = h.rooms[0];
+        }
 
-      // Safe fallback if not found anywhere so page NEVER breaks
-      if (!h) {
-        const prettyName = cleanId.replace(/[-_]/g, " ").replace(/\b\w/g, l => l.toUpperCase());
-        h = {
-          id: cleanId,
-          ownerId: "direct_spot_owner",
-          name: prettyName.includes("Hotel") ? prettyName : `${prettyName} Hotel & Resort`,
-          city: "Bangladesh",
-          address: "Prime Tourism District",
-          description: "Verified direct accommodation in Bangladesh with zero booking markups.",
-          locationLat: 21.4272,
-          locationLng: 92.0058,
-          images: ["https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800"],
-          rating: 4.8,
-          totalReviews: 140,
-          isVerified: true,
-          isRedMarked: false,
-          isActive: true,
-          amenities: ["Free Wi-Fi", "Air Conditioning", "24/7 Security", "Attached Bath"],
-          acceptedPayments: ["Cash", "bKash", "Nagad", "Credit Card"],
-          rooms: [
-            {
-              id: cleanId + "_r1",
-              hotelId: cleanId,
-              hotelName: prettyName,
-              type: "Standard Deluxe Room",
-              pricePerNight: 1200,
-              discountPrice: 950,
-              totalInventory: 4,
-              availableCount: 4,
-              images: ["https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800"],
-              amenities: ["Free Wi-Fi", "Air Conditioning", "Breakfast"],
-              maxAdults: 2,
-              maxChildren: 1,
-              floorNumber: 2,
-              roomNumber: "201",
-              capacity: "2 Guests"
-            } as any
-          ]
-        } as any;
+        setHotel(h);
+        setSelectedRoom(activeRoom);
+        if (searchParams.get("step") === "details") {
+          setStep("DETAILS");
+        }
+        setPaymentMethod(h.acceptedPayments?.[0] || "Cash");
+      } catch (err) {
+        console.error("Error loading hotel for checkout:", err);
+      } finally {
+        if (isMounted) setLoading(false);
       }
+    }
 
-      setHotel(h);
-      if (h?.rooms?.length) {
-        const reqRoomId = searchParams.get("roomId");
-        const found = reqRoomId ? h.rooms.find(r => r.id === reqRoomId) : null;
-        setSelectedRoom(found || h.rooms[0]);
-      }
-      if (searchParams.get("step") === "details") {
-        setStep("DETAILS");
-      }
-      if (h?.acceptedPayments?.length) {
-        setPaymentMethod(h.acceptedPayments[0]);
-      } else {
-        setPaymentMethod("Cash");
-      }
-      setLoading(false);
-    }).catch(() => {
-      setLoading(false);
-    });
+    loadHotelAndRoom();
+    return () => { isMounted = false; };
   }, [hotelId, searchParams]);
 
   useEffect(() => {

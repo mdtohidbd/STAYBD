@@ -19,8 +19,8 @@ const uploadImages = async (images, folder = 'staybuddy') => {
         });
         return res.secure_url;
       } catch (error) {
-        console.error('Cloudinary upload error:', error);
-        return null; // Or throw error
+        console.warn('Cloudinary upload error, keeping local image:', error.message);
+        return img; // Retain original image (data URL or URI)
       }
     }
     // If it's already a URL, just return it

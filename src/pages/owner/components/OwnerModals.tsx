@@ -226,7 +226,19 @@ export function AddHotelModal({ ownerId, onClose, onDone }: { ownerId: string; o
     );
 }
 
-export function AddRoomModal({ hotelId, onClose, onDone }: { hotelId: string; onClose: () => void; onDone: () => void }) {
+export function AddRoomModal({
+    hotelId,
+    hotelName,
+    hotelCity,
+    onClose,
+    onDone
+}: {
+    hotelId: string;
+    hotelName?: string;
+    hotelCity?: string;
+    onClose: () => void;
+    onDone: () => void;
+}) {
     const [loading, setLoading] = useState(false);
     const [images, setImages] = useState<string[]>([]);
     const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
@@ -250,16 +262,33 @@ export function AddRoomModal({ hotelId, onClose, onDone }: { hotelId: string; on
         setBeds(prev => ({ ...prev, [type]: Math.max(0, (prev[type] || 0) + delta) }));
     };
 
+    const ROOM_PHOTO_PRESETS = [
+        { label: "Ocean Cabana", url: "https://images.unsplash.com/photo-1590490360182-c33d57733427?w=800" },
+        { label: "Luxury Suite", url: "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=800" },
+        { label: "Grand Bedroom", url: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800" },
+        { label: "Royal Penthouse", url: "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=800" }
+    ];
+
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         const fd = new FormData(e.currentTarget);
         setLoading(true);
         try {
+            const price = Number(fd.get('price'));
+            const discountInput = fd.get('discountPrice');
+            const discountPrice = discountInput && Number(discountInput) > 0 ? Number(discountInput) : undefined;
+            const finalImages = images.length > 0
+                ? images
+                : ["https://images.unsplash.com/photo-1590490360182-c33d57733427?w=800", "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=800"];
+
             await api.addRoom({
                 hotelId,
+                hotelName: hotelName || "Sea Pearl Royal Beach Resort",
+                hotelCity: hotelCity || "Cox's Bazar",
                 type: fd.get('type') as string,
                 category,
-                pricePerNight: Number(fd.get('price')),
+                pricePerNight: price,
+                discountPrice,
                 totalInventory: inventory,
                 availableCount: inventory,
                 floorNumber: floor,
@@ -271,9 +300,9 @@ export function AddRoomModal({ hotelId, onClose, onDone }: { hotelId: string; on
                 maxChildren,
                 petsAllowed,
                 beds,
-                images,
-                amenities: selectedAmenities
-            });
+                images: finalImages,
+                amenities: selectedAmenities.length > 0 ? selectedAmenities : ["Free WiFi", "Air Conditioning", "Attached Bath"]
+            } as any);
             onDone();
         } catch (e: any) { alert('Failed: ' + e.message); }
         setLoading(false);
@@ -333,10 +362,14 @@ export function AddRoomModal({ hotelId, onClose, onDone }: { hotelId: string; on
                             <button type="button" onClick={() => setFloor(floor + 1)} className="w-8 h-8 flex items-center justify-center text-slate-600 hover:bg-slate-200 rounded-lg transition font-black text-base">+</button>
                         </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-3 gap-3">
                         <div>
-                            <label className="block text-[11px] font-black text-slate-700 uppercase tracking-wider mb-1.5 px-0.5">Base Price / Night (৳)</label>
+                            <label className="block text-[11px] font-black text-slate-700 uppercase tracking-wider mb-1.5 px-0.5">Base Price (৳)</label>
                             <input name="price" type="number" required className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold text-emerald-700 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition" placeholder="4500" />
+                        </div>
+                        <div>
+                            <label className="block text-[11px] font-black text-slate-700 uppercase tracking-wider mb-1.5 px-0.5">Promo / Offer (৳)</label>
+                            <input name="discountPrice" type="number" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold text-indigo-700 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition" placeholder="3850" />
                         </div>
                         <div>
                             <label className="block text-[11px] font-black text-slate-700 uppercase tracking-wider mb-1.5 px-0.5">Inventory Units</label>
@@ -454,8 +487,41 @@ export function AddRoomModal({ hotelId, onClose, onDone }: { hotelId: string; on
                         <textarea name="description" rows={3} required className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-medium text-slate-800 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition resize-none" placeholder="Balcony view, jacuzzi, king size bed..." />
                     </div>
                     <div>
-                        <label className="block text-[11px] font-black text-slate-700 uppercase tracking-wider mb-2 px-1">Room Photos</label>
-                        <MultiImageUploader onChange={setImages} maxImages={5} />
+                        <div className="flex items-center justify-between mb-2 px-1">
+                            <label className="block text-[11px] font-black text-slate-700 uppercase tracking-wider">Room Photos</label>
+                            <span className="text-[10px] text-slate-500 font-bold">Pick presets or upload files</span>
+                        </div>
+                        {/* Quick preset luxury photo thumbnails */}
+                        <div className="grid grid-cols-4 gap-2 mb-3">
+                            {ROOM_PHOTO_PRESETS.map((preset, pIdx) => {
+                                const isSelected = images.includes(preset.url);
+                                return (
+                                    <button
+                                        key={pIdx}
+                                        type="button"
+                                        onClick={() => {
+                                            if (isSelected) {
+                                                setImages(images.filter(x => x !== preset.url));
+                                            } else {
+                                                setImages([...images, preset.url]);
+                                            }
+                                        }}
+                                        className={`relative rounded-xl overflow-hidden h-14 border-2 transition group text-left ${isSelected ? 'border-indigo-600 ring-2 ring-indigo-500/30' : 'border-slate-200 hover:border-slate-400'}`}
+                                    >
+                                        <img src={preset.url} alt={preset.label} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end p-1">
+                                            <span className="text-[9px] text-white font-black truncate leading-tight">{preset.label}</span>
+                                        </div>
+                                        {isSelected && (
+                                            <div className="absolute top-1 right-1 w-3.5 h-3.5 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[8px] font-black">
+                                                ✓
+                                            </div>
+                                        )}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                        <MultiImageUploader onChange={setImages} initialImages={images} maxImages={5} />
                     </div>
                     <button disabled={loading} type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black py-3.5 rounded-xl text-xs uppercase tracking-wider transition shadow-sm active:scale-95 flex justify-center items-center gap-2">
                         {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Save Room Category <CheckCircle2 className="w-4 h-4" /></>}
@@ -1162,24 +1228,135 @@ export function AddOfferModal({ hotel, onClose, onDone }: { hotel: Hotel; onClos
     );
 }
 
-export function AddOfflineBtn({ hotelId, rooms, users, onDone }: { hotelId: string; rooms: any[]; users: any[]; onDone: () => void }) {
-    const [open, setOpen] = useState(false);
-    const [roomId, setRoomId] = useState(rooms[0]?.id ?? "");
+export function AddOfflineBookingModal({
+    hotelId,
+    rooms,
+    users,
+    preselectedRoomType,
+    onClose,
+    onDone
+}: {
+    hotelId: string;
+    rooms: any[];
+    users: any[];
+    preselectedRoomType?: string;
+    onClose: () => void;
+    onDone: () => void;
+}) {
+    const defaultRoom = preselectedRoomType ? rooms.find(r => r.type === preselectedRoomType) : rooms[0];
+    const [roomId, setRoomId] = useState(defaultRoom?.id ?? rooms[0]?.id ?? "");
     const [nights, setNights] = useState(1);
     const [guestName, setGuestName] = useState("");
     const [linkedUserId, setLinkedUserId] = useState<string>("");
+    const [submitting, setSubmitting] = useState(false);
 
     const submit = async () => {
         if (!roomId) return;
+        setSubmitting(true);
         try {
-            await api.addOfflineBooking({ hotelId, roomId, nights, guestName, userId: linkedUserId || undefined });
-            setOpen(false); setGuestName(""); setNights(1); setLinkedUserId("");
+            await api.addOfflineBooking({ hotelId, roomId, nights, guestName: guestName.trim() || "Walk-in Guest", userId: linkedUserId || undefined });
             onDone();
-        } catch (e: any) { alert("Failed: " + e.message); }
+            onClose();
+        } catch (e: any) {
+            alert("Failed: " + e.message);
+        } finally {
+            setSubmitting(false);
+        }
     };
 
     const selectedRoom = rooms.find(r => r.id === roomId);
     const total = (selectedRoom?.pricePerNight ?? 0) * nights;
+
+    return (
+        <div className="fixed inset-0 bg-slate-900/60 z-[200] flex items-center justify-center p-4 backdrop-blur-2xs animate-in fade-in duration-200">
+            <div className="bg-white border border-slate-200 rounded-[32px] w-full max-w-md shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
+                <div className="p-6 border-b border-slate-100 bg-slate-50/80 flex justify-between items-center">
+                    <div>
+                        <h3 className="font-black text-xl text-slate-900 uppercase tracking-tight">Direct Walk-in Booking</h3>
+                        <p className="text-slate-500 text-xs font-semibold mt-0.5">Manually record a front-desk reservation</p>
+                    </div>
+                    <button onClick={onClose} className="p-2 hover:bg-slate-200 rounded-xl text-slate-500 transition">
+                        <X className="w-5 h-5" />
+                    </button>
+                </div>
+
+                <div className="p-6 space-y-4 bg-white">
+                    <div>
+                        <label className="block text-[11px] font-black text-slate-700 uppercase tracking-wider mb-1.5">Guest Full Name</label>
+                        <input
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-900 placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition"
+                            placeholder="Enter guest name (or leave empty for Walk-in)"
+                            value={guestName}
+                            onChange={e => setGuestName(e.target.value)}
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-[11px] font-black text-slate-700 uppercase tracking-wider mb-1.5">Link Guest Account (Optional)</label>
+                        <select
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition cursor-pointer"
+                            value={linkedUserId}
+                            onChange={e => setLinkedUserId(e.target.value)}
+                        >
+                            <option value="">-- Anonymous / Direct Walk-in --</option>
+                            {users.map(u => <option key={u.userId} value={u.userId}>{u.name} (ID: {u.userId.slice(-4)})</option>)}
+                        </select>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                        <div>
+                            <label className="block text-[11px] font-black text-slate-700 uppercase tracking-wider mb-1.5">Assigned Room</label>
+                            <select
+                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition cursor-pointer"
+                                value={roomId}
+                                onChange={e => setRoomId(e.target.value)}
+                            >
+                                <option value="">-- Select Room --</option>
+                                {rooms.map(r => <option key={r.id} value={r.id}>{r.type} {r.roomNumber ? `(#${r.roomNumber})` : ''}</option>)}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-[11px] font-black text-slate-700 uppercase tracking-wider mb-1.5">Nights</label>
+                            <input
+                                type="number" min={1} max={30}
+                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-black text-slate-900 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition"
+                                value={nights}
+                                onChange={e => setNights(+e.target.value)}
+                            />
+                        </div>
+                    </div>
+
+                    <div className="bg-indigo-50/70 rounded-2xl p-4 flex justify-between items-center border border-indigo-100">
+                        <div>
+                            <p className="text-[10px] font-black text-indigo-700 uppercase tracking-wider mb-0.5">Total Charge</p>
+                            <p className="text-[10px] text-slate-500 font-semibold">{nights} Night(s) × ৳{selectedRoom?.pricePerNight.toLocaleString() || 0}</p>
+                        </div>
+                        <span className="text-2xl font-black text-indigo-700 tabular-nums">৳{total.toLocaleString()}</span>
+                    </div>
+                </div>
+
+                <div className="p-6 border-t border-slate-100 bg-slate-50/80 flex gap-3">
+                    <button
+                        onClick={onClose}
+                        className="flex-1 bg-white hover:bg-slate-100 text-slate-700 py-3 rounded-xl text-xs font-bold uppercase border border-slate-200 transition"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        onClick={submit}
+                        disabled={submitting || !roomId}
+                        className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl text-xs font-bold uppercase transition shadow-sm flex items-center justify-center gap-2 disabled:opacity-50"
+                    >
+                        {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <><CheckCircle2 className="w-4 h-4" /> Record Booking</>}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+export function AddOfflineBtn({ hotelId, rooms, users, onDone }: { hotelId: string; rooms: any[]; users: any[]; onDone: () => void }) {
+    const [open, setOpen] = useState(false);
 
     return (
         <>
@@ -1193,89 +1370,13 @@ export function AddOfflineBtn({ hotelId, rooms, users, onDone }: { hotelId: stri
             </button>
 
             {open && (
-                <div className="fixed inset-0 bg-slate-900/60 z-[200] flex items-center justify-center p-4 backdrop-blur-2xs animate-in fade-in duration-200">
-                    <div className="bg-white border border-slate-200 rounded-[32px] w-full max-w-md shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
-                        <div className="p-6 border-b border-slate-100 bg-slate-50/80 flex justify-between items-center">
-                            <div>
-                                <h3 className="font-black text-xl text-slate-900 uppercase tracking-tight">Direct Walk-in Booking</h3>
-                                <p className="text-slate-500 text-xs font-semibold mt-0.5">Manually record a front-desk reservation</p>
-                            </div>
-                            <button onClick={() => setOpen(false)} className="p-2 hover:bg-slate-200 rounded-xl text-slate-500 transition">
-                                <X className="w-5 h-5" />
-                            </button>
-                        </div>
-
-                        <div className="p-6 space-y-4 bg-white">
-                            <div>
-                                <label className="block text-[11px] font-black text-slate-700 uppercase tracking-wider mb-1.5">Guest Full Name</label>
-                                <input
-                                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-900 placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition"
-                                    placeholder="Enter guest name"
-                                    value={guestName}
-                                    onChange={e => setGuestName(e.target.value)}
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-[11px] font-black text-slate-700 uppercase tracking-wider mb-1.5">Link Guest Account (Optional)</label>
-                                <select
-                                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition cursor-pointer"
-                                    value={linkedUserId}
-                                    onChange={e => setLinkedUserId(e.target.value)}
-                                >
-                                    <option value="">-- Anonymous / Direct Walk-in --</option>
-                                    {users.map(u => <option key={u.userId} value={u.userId}>{u.name} (ID: {u.userId.slice(-4)})</option>)}
-                                </select>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label className="block text-[11px] font-black text-slate-700 uppercase tracking-wider mb-1.5">Assigned Room</label>
-                                    <select
-                                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition cursor-pointer"
-                                        value={roomId}
-                                        onChange={e => setRoomId(e.target.value)}
-                                    >
-                                        <option value="">-- Select Room --</option>
-                                        {rooms.map(r => <option key={r.id} value={r.id}>{r.type} {r.roomNumber}</option>)}
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="block text-[11px] font-black text-slate-700 uppercase tracking-wider mb-1.5">Nights</label>
-                                    <input
-                                        type="number" min={1} max={30}
-                                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-black text-slate-900 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition"
-                                        value={nights}
-                                        onChange={e => setNights(+e.target.value)}
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="bg-indigo-50/70 rounded-2xl p-4 flex justify-between items-center border border-indigo-100">
-                                <div>
-                                    <p className="text-[10px] font-black text-indigo-700 uppercase tracking-wider mb-0.5">Total Charge</p>
-                                    <p className="text-[10px] text-slate-500 font-semibold">{nights} Night(s) × ৳{selectedRoom?.pricePerNight.toLocaleString() || 0}</p>
-                                </div>
-                                <span className="text-2xl font-black text-indigo-700 tabular-nums">৳{total.toLocaleString()}</span>
-                            </div>
-                        </div>
-
-                        <div className="p-6 border-t border-slate-100 bg-slate-50/80 flex gap-3">
-                            <button
-                                onClick={() => setOpen(false)}
-                                className="flex-1 bg-white hover:bg-slate-100 text-slate-700 py-3 rounded-xl text-xs font-bold uppercase border border-slate-200 transition"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={submit}
-                                className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl text-xs font-bold uppercase transition shadow-sm flex items-center justify-center gap-2"
-                            >
-                                <CheckCircle2 className="w-4 h-4" /> Record Booking
-                            </button>
-                        </div>
-                    </div>
-                </div>
+                <AddOfflineBookingModal
+                    hotelId={hotelId}
+                    rooms={rooms}
+                    users={users}
+                    onClose={() => setOpen(false)}
+                    onDone={onDone}
+                />
             )}
         </>
     );

@@ -24,22 +24,17 @@ import {
   ChevronLeft,
   Heart,
   Share2,
-  ShieldCheck,
   Flame,
   Utensils,
   Mountain,
   Compass,
   Waves,
   Palette,
-  Search,
   Eye,
   CheckCircle2,
   Users,
   Calendar,
-  X,
   RefreshCw,
-  Award,
-  Zap,
   Info
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -371,13 +366,6 @@ const VIBE_OPTIONS: VibeOption[] = [
   { id: "art", labelEn: "Living Culture & Art", labelBn: "ঐতিহ্য ও কারুশিল্প", icon: Palette },
 ];
 
-const QUICK_AI_PROMPTS = [
-  { textEn: "Sunset views under ৳3,000", textBn: "সূর্যাস্ত ও সৈকত ৩,০০০ টাকার মধ্যে", vibe: "beach", query: "sunset" },
-  { textEn: "Tea estates & nature trails", textBn: "চা-বাগান ও সাইলেন্ট বোট সাফারি", vibe: "nature", query: "tea" },
-  { textEn: "Authentic Old Dhaka food walk", textBn: "পুরান ঢাকার গোপন বিরিয়ানি ও বাকরখানি", vibe: "food", query: "kacchi" },
-  { textEn: "Mountain treks above the clouds", textBn: "মেঘের দেশে পাহাড়ের চূড়ায় ট্র্যাকিং", vibe: "adventure", query: "cloud" },
-];
-
 // Helper: Normalize price so legacy USD entries never display as ৳16
 function formatBDT(price: number): number {
   if (!price || isNaN(price)) return 1500;
@@ -395,7 +383,6 @@ const ExperiencesAISection: React.FC = () => {
   // State
   const [allExperiences, setAllExperiences] = useState<CuratedExperience[]>(FALLBACK_CURATED_EXPERIENCES);
   const [activeVibe, setActiveVibe] = useState<VibeOption["id"]>("all");
-  const [searchQuery, setSearchQuery] = useState("");
   const [shuffling, setShuffling] = useState(false);
   const [shuffleSeed, setShuffleSeed] = useState(0);
 
@@ -490,30 +477,17 @@ const ExperiencesAISection: React.FC = () => {
       list = list.filter((exp) => exp.vibe === activeVibe || exp.tags?.some((t) => t.toLowerCase().includes(activeVibe)));
     }
 
-    // Filter by search query
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase().trim();
-      list = list.filter(
-        (exp) =>
-          exp.title.toLowerCase().includes(q) ||
-          exp.city.toLowerCase().includes(q) ||
-          exp.location.toLowerCase().includes(q) ||
-          exp.description.toLowerCase().includes(q) ||
-          exp.tags?.some((t) => t.toLowerCase().includes(q))
-      );
-    }
-
     // If shuffled, randomize order slightly
     if (shuffleSeed > 0) {
       list = [...list].sort(() => Math.sin(shuffleSeed) - 0.5);
     }
 
     return list;
-  }, [allExperiences, activeVibe, searchQuery, shuffleSeed]);
+  }, [allExperiences, activeVibe, shuffleSeed]);
 
   return (
     <section className="py-14 w-full">
-      {/* ── TOP HEADER & TRUST PILLS ── */}
+      {/* ── TOP HEADER ── */}
       <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-8">
         <div className="space-y-3">
           {/* AI Badge */}
@@ -531,25 +505,9 @@ const ExperiencesAISection: React.FC = () => {
 
           <p className="text-slate-600 text-sm md:text-base font-normal max-w-2xl leading-relaxed">
             {isBn
-              ? "আপনার অবস্থান ও মুডের সাথে এআই-ম্যাচড স্থানীয় গাইড, রোমাঞ্চকর অ্যাক্টিভিটি এবং ১০০% যাচাইকৃত সেরা অভিজ্ঞতা।"
+              ? "আপনার অবস্থান ও মুডের সাথে এআই-ম্যাচড স্থানীয় গাইড এবং রোমাঞ্চকর অভিজ্ঞতা।"
               : "Handcrafted expeditions, local culinary crawls & nature safaris intelligently matched with your destination."}
           </p>
-
-          {/* Social Proof Trust Pills */}
-          <div className="flex flex-wrap items-center gap-2 pt-1">
-            <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200/70 transition-colors px-2.5 py-1 rounded-lg">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-              {isBn ? "১০০% ভেরিফাইড লোকাল হোস্ট" : "100% Verified Local Hosts"}
-            </span>
-            <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200/70 transition-colors px-2.5 py-1 rounded-lg">
-              <Zap className="w-3.5 h-3.5 text-amber-500 fill-amber-500/40" />
-              {isBn ? "ইনস্ট্যান্ট কনফার্মেশন" : "Instant Confirmation"}
-            </span>
-            <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200/70 transition-colors px-2.5 py-1 rounded-lg">
-              <Award className="w-3.5 h-3.5 text-indigo-600" />
-              {isBn ? "গ্যারান্টিযুক্ত সেরা দাম (BDT)" : "Best Price Guarantee"}
-            </span>
-          </div>
         </div>
 
         {/* Action Controls */}
@@ -571,63 +529,6 @@ const ExperiencesAISection: React.FC = () => {
             <span>{isBn ? "সকল অভিজ্ঞতা দেখুন" : "Explore All"}</span>
             <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </button>
-        </div>
-      </div>
-
-      {/* ── INTERACTIVE AI PROMPT & SEARCH BAR ── */}
-      <div className="bg-gradient-to-r from-emerald-50/70 via-teal-50/40 to-slate-50 border border-emerald-100/80 rounded-3xl p-4 md:p-5 mb-8 shadow-xs">
-        <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
-          {/* Live Search Input */}
-          <div className="relative flex-1">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={
-                isBn
-                  ? "যে কোনো স্পট, অভিজ্ঞতা বা শহরের নাম লিখে খুঁজুন (যেমন: সুন্দরবন, সূর্যাস্ত, চা বাগান)..."
-                  : "Search experiences by activity, spot, or vibe (e.g. sunset, tea garden, kacchi, trek)..."
-              }
-              className="w-full pl-10 pr-9 py-2.5 bg-white border border-slate-200/90 rounded-2xl text-xs md:text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all shadow-xs"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
-
-          {/* AI Match Stats Badge */}
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-xl border border-slate-200 text-xs font-bold text-slate-700 shadow-2xs shrink-0">
-            <Sparkles className="w-3.5 h-3.5 text-amber-500 fill-amber-500/40" />
-            <span>
-              {filteredExperiences.length} {isBn ? "টি স্মার্ট অভিজ্ঞতা প্রস্তুত" : "AI Matches Found"}
-            </span>
-          </div>
-        </div>
-
-        {/* Clickable AI Prompt Suggestions */}
-        <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-emerald-100/60">
-          <span className="text-[11px] font-black text-slate-500 uppercase tracking-wider flex items-center gap-1">
-            <Zap className="w-3 h-3 text-amber-500" />
-            {isBn ? "এআই কুইক ফিল্টার:" : "AI Quick Prompts:"}
-          </span>
-          {QUICK_AI_PROMPTS.map((prompt, idx) => (
-            <button
-              key={idx}
-              onClick={() => {
-                setActiveVibe(prompt.vibe as VibeOption["id"]);
-                setSearchQuery(prompt.query);
-              }}
-              className="text-xs font-semibold text-slate-700 hover:text-emerald-700 bg-white/90 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 px-3 py-1 rounded-full transition-all shadow-2xs hover:shadow-xs"
-            >
-              ✨ {isBn ? prompt.textBn : prompt.textEn}
-            </button>
-          ))}
         </div>
       </div>
 
@@ -661,13 +562,10 @@ const ExperiencesAISection: React.FC = () => {
             {isBn ? "কোনো অভিজ্ঞতা পাওয়া যায়নি" : "No Experiences Match Your Filter"}
           </h3>
           <p className="text-xs text-slate-500 mb-4">
-            {isBn ? "অনুসন্ধান পরিবর্তন করে আবার চেষ্টা করুন।" : "Try clearing your search query or picking another vibe category."}
+            {isBn ? "অন্য ক্যাটাগরি নির্বাচন করে আবার চেষ্টা করুন।" : "Try picking another category tab above."}
           </p>
           <button
-            onClick={() => {
-              setActiveVibe("all");
-              setSearchQuery("");
-            }}
+            onClick={() => setActiveVibe("all")}
             className="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-4 py-2 rounded-xl hover:bg-emerald-100 transition-colors"
           >
             {isBn ? "সবগুলো ফিল্টার রিসেট করুন" : "Reset All Filters"}

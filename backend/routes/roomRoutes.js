@@ -1,46 +1,111 @@
 const express = require('express');
 const router = express.Router();
+const mongoose = require('mongoose');
 const Room = require('../models/Room');
 const Booking = require('../models/Booking');
 const Hotel = require('../models/Hotel');
+const { uploadImages } = require('../utils/uploadHelpers');
 
 // GET /api/rooms/hotel/:hotelId
 router.get('/hotel/:hotelId', async (req, res) => {
   try {
-    const rooms = await Room.find({ hotel: req.params.hotelId }).lean();
-    res.json(rooms.map(r => ({ ...r, id: r._id.toString(), hotelId: r.hotel.toString() })));
+    const { hotelId } = req.params;
+    let query = {};
+    if (mongoose.Types.ObjectId.isValid(hotelId)) {
+      query = { hotel: hotelId };
+    }
+    const rooms = await Room.find(query)
+      .populate('hotel', 'name city images address')
+      .sort({ updatedAt: -1, createdAt: -1 })
+      .lean();
+
+    res.json(rooms.map(r => {
+      const hImages = r.hotel?.images;
+      const hotelImg = Array.isArray(hImages)
+        ? hImages[0]
+        : (typeof hImages === 'string' ? hImages.split(' ')[0] : (r.images?.[0] || ''));
+      return {
+        ...r,
+        id: r._id.toString(),
+        hotelId: r.hotel?._id?.toString() || (r.hotel ? r.hotel.toString() : hotelId),
+        hotelName: r.hotel?.name || "StayBD Partner Hotel",
+        hotelCity: r.hotel?.city || "Cox's Bazar",
+        hotelImage: hotelImg
+      };
+    }));
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
-// GET /api/rooms — all rooms (admin)
+// GET /api/rooms — all rooms sorted newest first with complete hotel details
 router.get('/', async (req, res) => {
   try {
-    const rooms = await Room.find().populate('hotel', 'name').lean();
-    res.json(rooms.map(r => ({
-      ...r,
-      id: r._id.toString(),
-      hotelId: r.hotel?._id?.toString() || '',
-      hotelName: r.hotel?.name || '',
-    })));
+    const rooms = await Room.find()
+      .populate('hotel', 'name city images address')
+      .sort({ updatedAt: -1, createdAt: -1 })
+      .lean();
+
+    res.json(rooms.map(r => {
+      const hImages = r.hotel?.images;
+      const hotelImg = Array.isArray(hImages)
+        ? hImages[0]
+        : (typeof hImages === 'string' ? hImages.split(' ')[0] : (r.images?.[0] || ''));
+      return {
+        ...r,
+        id: r._id.toString(),
+        hotelId: r.hotel?._id?.toString() || (r.hotel ? r.hotel.toString() : ''),
+        hotelName: r.hotel?.name || "StayBD Partner Hotel",
+        hotelCity: r.hotel?.city || "Cox's Bazar",
+        hotelImage: hotelImg
+      };
+    }));
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
-
-const { uploadImages } = require('../utils/uploadHelpers');
 
 // POST /api/rooms
 router.post('/', async (req, res) => {
   try {
-    const { images: imgPayload, category, ...roomData } = req.body;
+    const { images: imgPayload, category, hotelId, hotelName, hotelCity, ...roomData } = req.body;
     const uploadedImages = await uploadImages(imgPayload, 'staybuddy/rooms');
+    
+    let resolvedHotelId = hotelId;
+    let resolvedHotel = null;
+    if (resolvedHotelId && mongoose.Types.ObjectId.isValid(resolvedHotelId)) {
+      resolvedHotel = await Hotel.findById(resolvedHotelId).lean();
+    }
+    if (!resolvedHotel) {
+      resolvedHotel = await Hotel.findOne().lean();
+      if (resolvedHotel) {
+        resolvedHotelId = resolvedHotel._id;
+      } else {
+        resolvedHotelId = new mongoose.Types.ObjectId();
+      }
+    }
+
+    const finalImages = (uploadedImages && uploadedImages.length > 0)
+      ? uploadedImages
+      : (Array.isArray(roomData.images) && roomData.images.length > 0 ? roomData.images : ["https://images.unsplash.com/photo-1590490360182-c33d57733427?w=800"]);
+
     const room = await Room.create({ 
       ...roomData, 
-      category: category || "Single Bed",
-      hotel: req.body.hotelId, 
-      images: uploadedImages 
+      category: category || "Deluxe Room",
+      hotel: resolvedHotelId, 
+      images: finalImages
     });
-    res.status(201).json({ ...room.toObject(), id: room._id.toString(), hotelId: room.hotel.toString() });
+
+    const hName = hotelName || resolvedHotel?.name || "StayBD Partner Hotel";
+    const hCity = hotelCity || resolvedHotel?.city || "Cox's Bazar";
+    const hImg = resolvedHotel?.images ? (Array.isArray(resolvedHotel.images) ? resolvedHotel.images[0] : resolvedHotel.images.split(' ')[0]) : finalImages[0];
+
+    res.status(201).json({
+      ...room.toObject(),
+      id: room._id.toString(),
+      hotelId: room.hotel.toString(),
+      hotelName: hName,
+      hotelCity: hCity,
+      hotelImage: hImg
+    });
   } catch (err) { 
-    console.error('Add room error:', err);
+    console.error("Room create error:", err);
     res.status(400).json({ message: err.message }); 
   }
 });
@@ -68,7 +133,11 @@ router.delete('/:id', async (req, res) => {
 // PATCH /api/rooms/:id/price
 router.patch('/:id/price', async (req, res) => {
   try {
-    const room = await Room.findByIdAndUpdate(req.params.id, { pricePerNight: req.body.pricePerNight }, { new: true }).lean();
+    const room = await Room.findByIdAndUpdate(
+      req.params.id, 
+      { pricePerNight: req.body.pricePerNight, updatedAt: new Date() }, 
+      { new: true }
+    ).lean();
     if (!room) return res.status(404).json({ message: 'Room not found' });
     res.json({ ...room, id: room._id.toString(), hotelId: room.hotel.toString() });
   } catch (err) { res.status(500).json({ message: err.message }); }
@@ -80,7 +149,7 @@ router.patch('/:id/inventory', async (req, res) => {
     const { totalInventory, availableCount } = req.body;
     const room = await Room.findByIdAndUpdate(
       req.params.id, 
-      { totalInventory, availableCount }, 
+      { totalInventory, availableCount, updatedAt: new Date() }, 
       { new: true }
     ).lean();
     if (!room) return res.status(404).json({ message: 'Room not found' });
@@ -91,7 +160,11 @@ router.patch('/:id/inventory', async (req, res) => {
 // PATCH /api/rooms/:id/discount
 router.patch('/:id/discount', async (req, res) => {
   try {
-    const room = await Room.findByIdAndUpdate(req.params.id, { discountPrice: req.body.discountPrice }, { new: true }).lean();
+    const room = await Room.findByIdAndUpdate(
+      req.params.id, 
+      { discountPrice: req.body.discountPrice, updatedAt: new Date() }, 
+      { new: true }
+    ).lean();
     if (!room) return res.status(404).json({ message: 'Room not found' });
     res.json({ ...room, id: room._id.toString(), hotelId: room.hotel.toString() });
   } catch (err) { res.status(500).json({ message: err.message }); }
