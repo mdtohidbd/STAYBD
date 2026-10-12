@@ -1,7 +1,7 @@
 
 
-# Project Memory — Stay-Buddy-Demo-hotel-management
-> 51 notes | Score threshold: >40
+# Project Memory — STAYBD
+> 63 notes | Score threshold: >40
 
 ## Safety — Never Run Destructive Commands
 
@@ -18,9 +18,18 @@
 
 **Stack:** JavaScript/TypeScript · Express + React + Tailwind · DB: Firebase, MongoDB
 
-## 📝 NOTE: 1 uncommitted file(s) in working tree.\n\n## Active: `backend`
+## 📝 NOTE: 1 uncommitted file(s) in working tree.\n\n## Active: `src/pages`
 
-- **🟢 Edited backend/.env (8 changes, 39min)**
+- **🟢 Edited src/pages/CheckoutPage.tsx (28 changes, 121min)**
+- **🟢 Edited src/pages/BecomeAHost.tsx (21 changes, 104min)**
+- **🟢 Edited src/pages/PropertyDetails.tsx (13 changes, 90min)**
+- **🟢 Edited src/pages/PropertyDetails.tsx (19 changes, 31min)**
+- **🟢 Edited src/pages/admin/panels/ComplaintsPanel.tsx (20 changes, 145min)**
+
+## Project Standards
+
+- convention in page.tsx
+- convention in SubscriptionBenefits.tsx
 
 ## Verified Best Practices
 
