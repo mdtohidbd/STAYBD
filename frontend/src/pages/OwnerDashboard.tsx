@@ -118,8 +118,10 @@ export default function OwnerDashboard() {
 
     try {
       const u = JSON.parse(ownerData);
-      setCurrentUser(u);
-      setAuthenticatedOwnerId(u.id);
+      const ownerId = u.id || u._id || (u.email ? u.email : '');
+      const normalizedUser = { ...u, id: ownerId, _id: ownerId };
+      setCurrentUser(normalizedUser);
+      setAuthenticatedOwnerId(ownerId);
       setAccess({ hasAccess: true });
     } catch (e) {
       console.error("Auth error:", e);
@@ -139,30 +141,57 @@ export default function OwnerDashboard() {
 
     let isSubscribed = true;
 
-    api.getOwnerHotels(authenticatedOwnerId).then(async (h) => {
-      if (!isSubscribed) return;
-      let list = Array.isArray(h) && h.length > 0 ? h : [];
+    const loadOwnerProperties = async () => {
+      let list: Hotel[] = [];
+      try {
+        const h = await api.getOwnerHotels(authenticatedOwnerId);
+        if (Array.isArray(h) && h.length > 0) {
+          list = h;
+        }
+      } catch (err) {
+        console.warn("getOwnerHotels failed:", err);
+      }
+
+      // Fallback 1: If no specific property found for owner or user is admin, fetch all platform hotels
       if (list.length === 0) {
         try {
           const allH = await api.getAllHotels();
           if (Array.isArray(allH) && allH.length > 0) {
             list = allH;
           }
-        } catch (e) {}
+        } catch (err) {
+          console.warn("getAllHotels failed:", err);
+        }
       }
+
+      // Fallback 2: Search hotels fallback
+      if (list.length === 0) {
+        try {
+          const searchRes = await api.searchHotels();
+          if (searchRes && Array.isArray(searchRes.hotels) && searchRes.hotels.length > 0) {
+            list = searchRes.hotels;
+          }
+        } catch (err) {
+          console.warn("searchHotels failed:", err);
+        }
+      }
+
+      if (!isSubscribed) return;
+
       setHotels(list);
       if (list.length > 0) {
         setHotel(prev => {
           if (!prev) return list[0];
           const matched = list.find(x => x.id === prev.id);
-          // Preserve existing reference if properties match to avoid triggering downstream hooks
           if (matched && matched.id === prev.id && matched.name === prev.name) {
             return prev;
           }
           return matched || list[0];
         });
       }
-    }).catch(() => {});
+    };
+
+    loadOwnerProperties();
 
     api.getNotifications(authenticatedOwnerId).then(notifs => {
       if (isSubscribed) setNotifications(Array.isArray(notifs) ? notifs : []);
@@ -710,6 +739,25 @@ export default function OwnerDashboard() {
               )}
             </div>
           </div>
+
+          {/* Empty state when no hotel property is linked */}
+          {!hotel && (
+            <div className="bg-white rounded-3xl border border-slate-200/90 shadow-sm p-12 text-center max-w-xl mx-auto my-12 animate-in fade-in duration-300">
+              <div className="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-3xl border border-indigo-100 flex items-center justify-center mx-auto mb-4">
+                <BedDouble className="w-8 h-8" />
+              </div>
+              <h3 className="text-xl font-black text-slate-900 mb-2 uppercase tracking-tight">No Active Property Linked</h3>
+              <p className="text-slate-500 text-xs font-medium mb-6">
+                You do not have any hotel property linked to this account yet, or properties are still syncing with the cloud. Add your property to view live room matrix, analytics, bookings, and revenue.
+              </p>
+              <button
+                onClick={() => setShowAddHotel(true)}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 py-3 rounded-xl text-xs uppercase tracking-wider shadow-md transition"
+              >
+                + Add Hotel Property
+              </button>
+            </div>
+          )}
 
           {/* ────────────────────────────────────────────────────────────
               TAB 1: ANALYTICS OVERVIEW — PREMIUM EDITION

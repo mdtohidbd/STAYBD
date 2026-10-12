@@ -38,6 +38,7 @@ router.post('/admin/login', async (req, res) => {
     }
 
     res.json({
+      id: user._id,
       _id: user._id,
       name: user.name,
       email: user.email,
@@ -79,6 +80,7 @@ router.post('/owner/login', async (req, res) => {
     }
 
     res.json({
+      id: user._id,
       _id: user._id,
       name: user.name,
       email: user.email,

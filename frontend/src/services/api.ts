@@ -639,18 +639,22 @@ export const api = {
 
   // ╔══════════════ AUTH SECTION ══════════════╗
 
-  adminLogin: async (email: string, password: string): Promise<{ _id: string; name: string; email: string; role: string; token: string }> => {
-    return apiFetch<{ _id: string; name: string; email: string; role: string; token: string }>('/auth/admin/login', {
+  adminLogin: async (email: string, password: string): Promise<{ id: string; _id: string; name: string; email: string; role: string; token: string }> => {
+    const data = await apiFetch<any>('/auth/admin/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
+    const id = data.id || data._id;
+    return { ...data, id, _id: id };
   },
 
-  ownerLogin: async (email: string, password: string): Promise<{ _id: string; name: string; email: string; role: string; token: string }> => {
-    return apiFetch<{ _id: string; name: string; email: string; role: string; token: string }>('/auth/owner/login', {
+  ownerLogin: async (email: string, password: string): Promise<{ id: string; _id: string; name: string; email: string; role: string; token: string }> => {
+    const data = await apiFetch<any>('/auth/owner/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
+    const id = data.id || data._id;
+    return { ...data, id, _id: id };
   },
 
   // ╔══════════════ USER SECTION ══════════════╗
